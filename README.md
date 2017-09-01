@@ -39,7 +39,7 @@ the original Linux Live Kit.
   SquashFS and {AUFS || OverlayFS}, or else you will get an error 
   both while building, and when you actually boot your Live Kit system.
 
-  PROTIP:
+  ### PROTIP:
   * On most Linux distro-s, the kernel is in /vmlinuz, a
     symlink to /boot/vmlinuz-* or even /boot/vmlinux-*
 
@@ -55,7 +55,7 @@ the original Linux Live Kit.
 - It's recommended to replace boot background in
   bootfiles/bootpic.png and edit syslinux.cfg to fit your needs.
 
-  NOTE:
+  ### NOTE:
   * When editing the configuration file, make sure to keep all paths
     pointing to /boot/, since it will be replaced to /LIVEKITNAME/boot/
     during the build session.
