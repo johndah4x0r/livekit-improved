@@ -1,13 +1,12 @@
 #!/bin/sh
 
-# Functions library :: for Linux Live Kit scripts
-# Original author: Tomas M. <http://www.linux-live.org>
-# Modified by: 'JohnDaH4x0r' <terencedoesmc12 AT gmail DOT com>
+# Functions library for Live Kit Improved scripts
+# Modified by: JohnDaH4x0r <terencedoesmc12 AT gmail.com>
 
-# related to build script
+# Related to build script
 # get_exclude: Generate exclude arguments for 'mksquashfs'
 # $1: the exclude list ("$EXCLUDE", if you use .config)
-
+#
 get_exclude()
 {
     EXCLUDE_LIST="$1"
@@ -25,17 +24,69 @@ get_exclude()
     done
 }
 
+# Get / generate lowerdirs argument for 'mount -t overlayfs'
+# $1: Bundle mountpoints directory "/memory/bundles"
+# $2: Bundle extension
+#
 get_lowerdirs()
 {
-	local BUND_DIRS BUND_EXT BUND MNT_OPT
-	BUND_DIRS="$1"
-	BUND_EXT="$2"
-	MNT_OPT=""
+    local BUND_DIRS BUND_EXT BUND MNT_OPT
+    BUND_DIRS="$1"
+    BUND_EXT="$2"
+    MNT_OPT=""
 
-	MNT_OPT="$(find "$BUND_DIRS" -maxdepth 1 -type d -name "*.${BUND_EXT}" | \
+    MNT_OPT="$(find "$BUND_DIRS" -maxdepth 1 -type d -name "*.${BUND_EXT}" | \
         sort | while read BUND; do echo -n "${BUND}:"; done)"
-	MNT_OPT="${MNT_OPT%?}"
-	echo "$MNT_OPT"
+    MNT_OPT="${MNT_OPT%?}"
+    echo "$MNT_OPT"
+}
+
+# Check for POSIX compatiblity
+# WILL replace the built-in check inside persistent_changes()
+# $1: Directory to test
+#
+# Return codes:
+# 0 - Success       (SUCC)
+# 1 - General error (NOT_POSIX)
+# 2 - Inaccessable  (NO_ACC)
+#
+posix_chk() {
+    local CWD F1 F2 SUCC NO_ACC NOT_POSIX TARGET
+
+    TARGET="$(realpath "$1")"
+    CWD="$(pwd)"
+    F1="${TARGET}/.file1"
+    F2="${TARGET}/.file2"
+
+    # Return codes
+    SUCC=0
+    NOT_POSIX=1
+    NO_ACC=2
+
+    # Check if read-only or inaccessable
+    touch "$F1" 2>/dev/null && test -e "$F1"
+
+    if [ $? -ne $SUCC ]; then
+        cd "$CWD"
+        return $NO_ACC
+    fi
+
+    # Start the cruel proccess.
+    # FAT32 hates, and really hates linking files!
+    chmod +x "$F1" 2>/dev/null && [ -x "$F1" ] && \
+    chmod -x "$F1" 2>/dev/null && [ ! -x "$F1" ] && \
+    ln -s "$F1" "$F2" 2>/dev/null && [ -e "$F2" ] && \
+    rm -f "$F1" "$F2" 2>/dev/null
+
+    if [ $? -ne $SUCC ]; then
+        cd "$CWD"
+        rm "$F1"
+        return $NOT_POSIX
+    else
+        rm "$F1" "$F2"
+        cd "$CWD"
+        return $SUCC
+    fi
 }
 
 # NOTE: DO NOT TOUCH THE ESCAPE CHARACTERS!
@@ -148,7 +199,7 @@ debug_shell()
 {
     if [ "$DBG_SHELL" ]; then
         show_debug_banner
-        setsid sh -c 'exec sh < /dev/tty1 >/dev/tty1 2>&1'
+        setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
         echo
     fi
 }
@@ -159,7 +210,7 @@ fatal()
     echo_fatal "$@"
     echo_sign "EMERGENCY MODE" >&2
     echo_bold "Please consult /var/log/livekit-log for more info." >&2
-    setsid sh -c 'exec sh < /dev/tty1 >/dev/tty1 2>&1'
+    setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
 }
 
 
@@ -260,7 +311,7 @@ modprobe_everything()
 {
     debug_log "modprobe_everything" "$*"
 
-    echo_livekit_msg "Probing for hardware..." >&2
+    echo_livekit_msg "Modprobing kernel drivers..." >&2
 
     find /lib/modules/ | fgrep '.ko' | xargs -n 1 modprobe 2>/dev/null
     refresh_devs
@@ -406,44 +457,54 @@ fs_options()
 init_network_dev()
 {
     debug_log "init_network_dev" "$*"
-    echo_livekit_msg "Preparing networking device(s)..." >&2
-    local MODULE ETH
+    echo_livekit_msg "Initialising networking device(s)..." >&2
+    local MOD ETH
 
-    for MODULE in 3c59x acenic de4x5 e1000 e1000e e100 epic100 hp100 \
+    # Do a simple brute force loading
+    for MOD in 3c59x acenic de4x5 e1000 e1000e e100 epic100 hp100 \
     ne2k-pci pcnet32 8139too 8139cp tulip via-rhine r8169 atl1e yellowfin \
     tg3 dl2k ns83820 atl1 b44 bnx2 skge sky2 tulip depca 3c501 3c503 \
     3c505 3c507 3c509 3c515 ac3200 at1700 cosa cs89x0 de600 de620 e2100 \
     eepro eexpress eth16i ewrk3 forcedeth hostess_sv11 hp-plus hp ni52 \
     ni65 sb1000 sealevel smc-ultra sis900 smc9194 wd; do
-        modprobe $MODULE 2>/dev/null
-        ETH="$(cat /proc/net/dev | grep : | grep -v lo: | cut -d : -f 1 | tr -d " " | head -n 1)"
+
+        # Load kernel module
+        modprobe $MOD 2>/dev/null
+
+        # Try to extract internet connection info
+        ETH="$(cat /proc/net/dev | grep ':' | grep -v 'lo:' | cut -d ':' -f 1 \
+            | tr -d " " | head -n 1)"
+
+        # We got a hit!
         if [ "$ETH" != "" ]; then
             echo "$ETH"
             return 0
         fi
-        rmmod $MODULE 2>/dev/null
+
+        # We lost, we have to continue
+        rmmod $MOD 2>/dev/null
     done
 
-   # If we are here, none of the above specified modules worked.
-   # As a last chance, try to modprobe everything.
-   echo_warn "No networking kernel module found!"
+   # As a last chance, send a flood that will
+   # AT LEAST fill the gap (like last second brute force)
+   echo_warn "No networking kernel module found..."
    modprobe_everything
    cat /proc/net/dev | grep ':' | grep -v 'lo:' | cut -d : -f 1 | tr -d " " | head -n 1
 }
 
 
-# Download data from tftp
-# $1 = target (store downloaded files there)
+# Download data from PXE server
+# $1: target (store downloaded files there)
 #
 download_data_pxe()
 {
     debug_log "download_data_pxe" "$*"
-    local CMD CLIENT SERVER GW MASK PORT ETH PROTOCOL
+    local CMD CLIENT SERVER GW MASK PORT ETH PROTOCOL PXEFILEPATH
 
     mkdir -p "$1/$LIVEKITNAME"
 
     cmdline_value ip | while IFS=":" read CLIENT SERVER GW MASK PORT; do
-        echo_livekit_msg "Downloading files from ${SERVER}..." >&2
+        echo_livekit_msg "Downloading files from ${SERVER} ..." >&2
 
         ETH=$(init_network_dev)
         if [ "$PORT" = "" ]; then 
@@ -462,13 +523,18 @@ download_data_pxe()
         # well known IP address of Google public DNS service
         echo nameserver 8.8.8.8 >> /etc/resolv.conf
 
+        # Start with http
         PROTOCOL=http
-        wget -q -O "$1/PXEFILELIST" "http://$SERVER:$PORT/PXEFILELIST?$(uname -r):$(uname -m)"
+        PXEFILEPATH="http://$SERVER:$PORT/PXEFILELIST?$(uname -r):$(uname -m)"
+
+        # Download a file list (aka the contents of PXE server dir)
+        wget -q -O "$1/PXEFILELIST" "$PXEFILEPATH"
+
         if [ $? -ne 0 ]; then
-            echo_warn "Failed to download from http://${SERVER}:${PORT}!" >&2
+            echo_warn "http://${SERVER}:${PORT}: Failed to download PXEFILELIST." >&2
             echo_livekit_msg 'Downloading with TFTP protocol...' >&2
             PROTOCOL=tftp
-            tftp -g -r PXEFILELIST -l "$1/PXEFILELIST" $SERVER
+            tftp -g -r PXEFILELIST -l "$1/PXEFILELIST" "$SERVER"
         fi
 
         cat "$1/PXEFILELIST" | while read FILE; do
@@ -477,7 +543,7 @@ download_data_pxe()
                 wget -O "$1/$LIVEKITNAME/$FILE" "http://$SERVER:$PORT/$FILE"
             elif [ "$PROTOCOL" = "tftp" ]; then
                 echo_livekit_msg "PXE-TFTP: Downloading ${FILE}..." >&2
-                tftp -g -r $FILE -l "$1/$LIVEKITNAME/$FILE" $SERVER
+                tftp -g -r "$FILE" -l "$1/$LIVEKITNAME/$FILE" $SERVER
             fi
         done
     done
@@ -548,8 +614,8 @@ find_data()
     FROM="$(cmdline_value from)"
     if [ "$FROM" = "" ]; then FROM="$LIVEKITNAME"; fi
     echo_livekit >&2
-    echo "Looking for $LIVEKITNAME data in /$FROM .." | tr -s "/" >&2
-    for timeout in $(seq 1 $1); do
+    echo "Looking for $LIVEKITNAME data in /$FROM ..." | tr -s "/" >&2
+    for i in {1..$1}; do
         echo -n "." >&2
         refresh_devs
         DATA="$(find_data_try "$2" "$FROM")"
@@ -579,11 +645,9 @@ persistent_changes()
 {
     debug_log "persistent_changes" "$*"
 
-    local CHANGES T1 T2
+    local CHANGES
 
     CHANGES="$1/$(basename "$2")"
-    T1="$CHANGES/.perch-test"
-    T2="${T1}-clone"
 
     # Setup the directory anyway, it will be used in all cases
     mkdir -p "$2"
@@ -593,38 +657,34 @@ persistent_changes()
         return
     fi
 
-    # check if changes directory exists and is writable
-    touch "$T1" 2>/dev/null && rm -f "$T1" 2>/dev/null
-
-    # if not, simply return back
-    if [ $? -ne 0 ]; then
-        echo_warn "Persistent changes not writable or not used."
-        return
-    fi
     echo_livekit_msg "Testing persistent changes for POSIX compatibility..." >&2
 
-    # The line of defense against EXT4 wannabe's (I'm talking to you, NTFS)
-    touch "$T1" && ln -sf "$T1" "$T2" 2>/dev/null && \
-    chmod +x "$T1" 2>/dev/null && [ -x "$T1" ] && \
-    chmod -x "$T1" 2>/dev/null && [ ! -x "$T1" ] && \
-    rm "$T1" "$T2" 2>/dev/null
+    posix_chk "$CHANGES"
 
-    if [ $? -ne 0 ]; then
-        echo_warn "File system is not POSIX-compatible!" >&2
-        echo_livekit_msg "Activating DynFileFS persistent changes..." >&2
-        rm "$T1" "$T2" 2>/dev/null
+    case $? in
+        0)
+            echo_livekit_msg "Activating native persistent changes..." >&2
+            mount --bind "$CHANGES" "$2"
+            ;;
 
-        mount.dynfilefs "$CHANGES/changes.dat" 4000 "$2"
-        if [ "$(device_bestfs "$2/loop.fs" | tr -d " ")" = "-t" ]; then
-            mke2fs -F "$2/loop.fs" >/dev/null
-        fi
-        mount -o loop,sync "$2/loop.fs" "$2"
-        rmdir "$2/lost+found" 2>/dev/null
+        1)
+            echo_warn "File system is not POSIX-compatible!" >&2
+            echo_livekit_msg "Activating dynamic persistent changes..." >&2
 
-    else
-        echo_livekit_msg "Activating native persistent changes..." >&2
-        mount --bind "$CHANGES" "$2"
-    fi
+            mount.dynfilefs "$CHANGES/changes.dat" 4000 "$2"
+            if [ "$(device_bestfs "$2/loop.fs" | tr -d " ")" = "-t" ]; then
+                mke2fs -F "$2/loop.fs" >/dev/null
+            fi
+            mount -o loop,sync "$2/loop.fs" "$2"
+            rmdir "$2/lost+found" 2>/dev/null
+            ;;
+
+        2)
+            echo_warn "Persistent changes read-only or not used." >&2
+            return
+            ;;
+    esac
+
 }
 
 # Copy content of rootcopy directory to union
@@ -635,8 +695,7 @@ copy_rootcopy_content()
     debug_log "copy_rootcopy_content" "$*"
 
     if [ "$(ls -1 "$1/rootcopy/" 2>/dev/null)" != "" ]; then
-        echo_livekit
-        echo "Copying content of rootcopy directory..."
+        echo_livekit_msg "Copying content of rootcopy directory..." >&2
         cp -a "$1"/rootcopy/* "$2"
     fi
 }
@@ -667,7 +726,7 @@ copy_to_ram()
     MDEV="$(losetup $MDEV 2>/dev/null | cut -d " " -f 3)"
     umount "$MDIR" 2>/dev/null
 
-    if [ "$MDEV" ]; then 
+    if [ "$MDEV" != "" ]; then 
         # iso was mounted here, try to unmount the FS it resides on too
         MDEV="$(mounted_device "$MDEV")"
         umount "$MDEV" 2>/dev/null
@@ -765,7 +824,7 @@ prepare_overlay()
 
     # Check if we got any errors...
     if [ $? -ne 0 ]; then
-    	panic "Failed to mount main OverlayFS union!"
+        panic "Failed to mount main OverlayFS union!"
     fi
 
 }
