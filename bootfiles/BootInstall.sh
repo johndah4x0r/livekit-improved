@@ -4,7 +4,7 @@
 
 # Make sure that we are root
 if [ $(id -u) -ne 0 ]; then
-    echo "> $(basename $0): Must be root to install bootloader!" >&2
+    echo "> $(basename $0): May not be run by non-root users!" >&2
     exit 1
 fi
 
@@ -20,17 +20,19 @@ LOGFILE="/tmp/$INST_NAME-$INST_PID.log"
 
 # find out device and mountpoint
 PART="$(df . | tail -n 1 | tr -s " " | cut -d " " -f 1)"
-DEV="$(echo "$PART" | sed -r "s:[0-9]+\$::" | sed -r "s:([0-9])[a-z]+\$:\\1:i")"   #"
+DEV="$(echo "$PART" | sed -r 's:[0-9]+\$::' | sed -r 's:([0-9])[a-z]+\$:\\1:i')"   #"
 
 # Try to use installed extlinux binary and
 # fallback to extlinux.exe only if no installed
 # extlinux is not found at all.
+echo "Searching for ExtLinux"
 EXTLINUX="$(which extlinux 2>/dev/null)"
 
 if [ -z "$EXTLINUX" ]; then
-    echo "> Falling back to included EXTLinux program..." >&2
+    echo "Falling back to included ExtLinux program..." >&2
     EXTLINUX="./extlinux.exe"
-fi
+else
+    echo "System command: $EXTLINUX"
 
 # Prompt user
 #

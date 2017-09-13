@@ -115,10 +115,7 @@ depmod -b $INITRAMFS $KERNEL
 echo "root::0:0::/root:/bin/bash" >$INITRAMFS/etc/passwd
 touch $INITRAMFS/etc/{m,fs}tab
 
-<<<<<<< HEAD
 # Copy files
-=======
->>>>>>> c0167786775b64cf3717ced9769f70d4079defe2
 cp init $INITRAMFS
 chmod a+x $INITRAMFS/init
 cp cleanup $INITRAMFS/lib
