@@ -40,10 +40,13 @@ get_lowerdirs()
     BUND_EXT="$2"
     MNT_OPT=""
 
-    MNT_OPT="$(find "$BUND_DIRS" -maxdepth 1 -type d -name "*.${BUND_EXT}" | \
-        sort | while read BUND; do echo -n "${BUND}:"; done)"
-    MNT_OPT="${MNT_OPT%?}"
-    echo "$MNT_OPT"
+    find "$BUND_DIRS" -maxdepth 1 -type d -name "*.${BUND_EXT}" | sort | {
+        while read BUND; do
+            MNT_OPT="${BUND}:${MNT_OPT}"
+        done
+        MNT_OPT="${MNT_OPT%?}"
+        echo "$MNT_OPT"
+    }
 }
 
 # Check for POSIX compatiblity
