@@ -142,6 +142,12 @@ echo_bold()
     echo -e "$BOLD""$*""$NC"
 }
 
+# echo ok tag
+echo_ok() {
+    echo -ne "\r"
+    echo -ne "[livekit:${GREEN}"'-ok-'"${NC}] $*"
+}
+
 # echo livekit tag
 echo_livekit()
 {
