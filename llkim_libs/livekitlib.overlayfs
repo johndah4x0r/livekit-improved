@@ -10,18 +10,23 @@
 get_exclude()
 {
     EXCLUDE_LIST="$1"
-    PARENT_DIR="$(echo "$2" | tr -s "/")"
+    PARENT_DIRS="$(echo "$2" | tr -s "/")"
 
-    if [ -z "$PARENT_DIR" ]; then
-        return 1
-    elif [ "$PARENT_DIR" = "/" ]; then
+    if [ -z "$PARENT_DIRS" ]; then
         return 1
     fi
 
-    echo "$EXCLUDE_LIST" | tr " " "\n" | grep "$PARENT_DIR" \
-    | while read KEY; do
-        echo -n "-e $KEY "
+    for i in $PARENT_DIRS; do
+        if [ "$i" = "/" ]; then
+            continue
+        fi
+
+        echo "$EXCLUDE_LIST" | tr " " "\n" | grep "$i" | \
+        while read KEY; do
+            echo -n "-e $KEY "
+        done
     done
+
 }
 
 # Get / generate lowerdirs argument for 'mount -t overlayfs'
@@ -120,7 +125,7 @@ dbg_shell_start()
 debug_log()
 {
     if [ "$DEBUG_IS_ENABLED" ]; then
-        echo "<${GREEN}"'debug'"${NC}>: $@" >&2
+        echo "<${GREEN}"'debug'"${NC}>: $*" >&2
         log "debug_log: $*"
     fi
 }
@@ -174,13 +179,13 @@ echo_sign()
 # log - store given text in /var/log/livedbg
 log()
 {
-    echo "$@" 2>/dev/null >>/var/log/livekit-log
+    echo "$*" 2>/dev/null >>/var/log/livekit-log
 }
 
 echolog()
 {
-    echo "$@"
-    log "echolog: $@"
+    echo "$*"
+    log "echolog: $*"
 }
 
 # show information about the debug shell
@@ -206,8 +211,8 @@ debug_shell()
 
 fatal()
 {
-    log "FatalError: $@"
-    echo_fatal "$@"
+    log "FatalError: $*"
+    echo_fatal "$*"
     echo_sign "EMERGENCY MODE" >&2
     echo_bold "Please consult /var/log/livekit-log for more info." >&2
     setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
@@ -261,7 +266,7 @@ panic() {
     echo_bold "Press Enter or wait 15 seconds to automatically reboot..."
     read -t 15 junk
     reboot -f
-    
+
 }
 
 # get value of kernel cmdline parameter $1
@@ -507,8 +512,8 @@ download_data_pxe()
         echo_livekit_msg "Downloading files from ${SERVER} ..." >&2
 
         ETH=$(init_network_dev)
-        if [ "$PORT" = "" ]; then 
-            PORT="7529" 
+        if [ "$PORT" = "" ]; then
+            PORT="7529"
         fi
 
         # set IP address as given by boot paramter
@@ -585,7 +590,7 @@ find_data_try()
             return
         fi
 
-        # unmount twice, since there could be mounted ISO as loop too. 
+        # unmount twice, since there could be mounted ISO as loop too.
         # If not, it doesn't hurt
         umount "$1" 2>/dev/null
         umount "$1" 2>/dev/null
@@ -615,13 +620,13 @@ find_data()
     if [ "$FROM" = "" ]; then FROM="$LIVEKITNAME"; fi
     echo_livekit >&2
     echo "Looking for $LIVEKITNAME data in /$FROM ..." | tr -s "/" >&2
-    for i in {1..$1}; do
+    for i in seq 1 $1; do
         echo -n "." >&2
         refresh_devs
         DATA="$(find_data_try "$2" "$FROM")"
-        
+
         echo "\n" >&2
-        
+
         if [ "$DATA" != "" ]; then
             echo_livekit_msg "$LIVEKITNAME data found on $(mounted_device "$2")" >&2
             echo "$DATA"
@@ -726,7 +731,7 @@ copy_to_ram()
     MDEV="$(losetup $MDEV 2>/dev/null | cut -d " " -f 3)"
     umount "$MDIR" 2>/dev/null
 
-    if [ "$MDEV" != "" ]; then 
+    if [ "$MDEV" != "" ]; then
         # iso was mounted here, try to unmount the FS it resides on too
         MDEV="$(mounted_device "$MDEV")"
         umount "$MDEV" 2>/dev/null
@@ -801,8 +806,8 @@ prepare_overlay()
     ALL_BUNDS="$(get_lowerdirs "$2" "$BEXT")"
     LOWERDIR="/memory/lowerdir"
     CHANGEDIR="$3"
-    UPPERDIR="${CHANGES}/.rootfs"
-    WORKDIR="${CHANGES}/.work"
+    UPPERDIR="${CHANGEDIR}/.rootfs"
+    WORKDIR="${CHANGEDIR}/.work"
 
     # Make the both the upperdir and workdir (cuz it's non-existant, yet...)
     mkdir "$UPPERDIR" >/dev/null 2>&1
@@ -810,7 +815,7 @@ prepare_overlay()
 
     # Make the union directory (this might actually be an alarming bug)
     mkdir "$4" >/dev/null 2>&1
-    
+
     # Separate commands
     mkdir "$LOWERDIR" >/dev/null 2>&1
     mount -t overlay -o lowerdir="$ALL_BUNDS" overlay "$LOWERDIR" \
@@ -891,7 +896,7 @@ change_root()
     mkdir -p mnt/live
     mount -n -o remount,ro overlay .
     pivot_root . mnt/live
-    exec $CHROOT . $INIT < dev/console > dev/console 2>&1
+    $CHROOT . $INIT < dev/console > dev/console 2>&1
 
     if [ $? -ne 0 ]; then
         panic "Failed to change root!"

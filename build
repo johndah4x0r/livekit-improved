@@ -26,7 +26,7 @@ cd "$CHANGEDIR"
 
 # Parse 'UNIFS' variable in .config
 # HELP: 'UNIFS'; variable to choose between
-# AUFS and OverlayFS. Check out docs/aufs_vs_overlay.txt 
+# AUFS and OverlayFS. Check out docs/aufs_vs_overlay.txt
 # to learn more...
 cd .
 
@@ -72,7 +72,7 @@ which genisoimage 2>/dev/null)"
 if [ -z "$MKISOFS" ]; then
     echo_warn "build: 'mkisofs' / 'genisoimage': not-avail"
     echo_err "build: 'mkisofs' / 'genisoimage': not-avail"
-    
+
     # Hahaha! 'false'?!?!?
     MKISOFS="false"
 else
@@ -161,12 +161,15 @@ if [ -d ./include_bund/ ]; then
 fi
 
 # create compressed bundles
+COREMOD=""
 for i in $MKMOD; do
-    CMDOPT="$(get_exclude "$EXCLUDE" $i)"
-    echolog "CMDOPT = $CMDOPT" >&2
-    mkbund /$i $LIVEKITDATA/$LIVEKITNAME/00-main-$i.$BEXT \
-    -keep-as-directory $CMDOPT
+    COREMOD="$COREMOD /$i"
 done
+
+CMDOPT="$(get_exclude "$EXCLUDE" "$COREMOD")"
+echolog "CMDOPT = $CMDOPT" >&2
+mkbund $COREMOD "${LIVEKITDATA}/${LIVEKITNAME}"/00-main-."$BEXT" \
+    -keep-as-directory $CMDOPT
 
 # copy rootcopy folder
 if [ -d rootcopy/ ]; then

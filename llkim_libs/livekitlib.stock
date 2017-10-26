@@ -7,22 +7,26 @@
 # related to build script
 # get_exclude: Generate exclude arguments for 'mksquashfs'
 # $1: the exclude list ("$EXCLUDE", if you use .config)
-
 get_exclude()
 {
     EXCLUDE_LIST="$1"
-    PARENT_DIR="$(echo "$2" | tr -s "/")"
+    PARENT_DIRS="$(echo "$2" | tr -s "/")"
 
-    if [ -z "$PARENT_DIR" ]; then
-        return 1
-    elif [ "$PARENT_DIR" = "/" ]; then
+    if [ -z "$PARENT_DIRS" ]; then
         return 1
     fi
 
-    echo "$EXCLUDE_LIST" | tr " " "\n" | grep "$PARENT_DIR" \
-    | while read KEY; do
-        echo -n "-e $KEY "
+    for i in $PARENT_DIRS; do
+        if [ "$i" = "/" ]; then
+            continue
+        fi
+
+        echo "$EXCLUDE_LIST" | tr " " "\n" | grep "$i" | \
+        while read KEY; do
+            echo -n "-e $KEY "
+        done
     done
+
 }
 
 # NOTE: DO NOT TOUCH THE ESCAPE CHARACTERS!
@@ -441,8 +445,8 @@ download_data_pxe()
         echo_livekit_msg "Downloading files from ${SERVER}..." >&2
 
         ETH=$(init_network_dev)
-        if [ "$PORT" = "" ]; then 
-            PORT="7529" 
+        if [ "$PORT" = "" ]; then
+            PORT="7529"
         fi
 
         # set IP address as given by boot paramter
@@ -544,10 +548,10 @@ find_data()
         echo -n "." >&2
         refresh_devs >&2
         DATA="$(find_data_try "$2" "$FROM")"
-        
+
         # This "was" a bug!
         echo "\n" >&2
-        
+
         if [ "$DATA" != "" ]; then
             echo_livekit_msg "$LIVEKITNAME data found on $(mounted_device "$2")" >&2
             echo "$DATA"
