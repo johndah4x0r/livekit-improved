@@ -60,7 +60,7 @@ dbg_shell_start()
 debug_log()
 {
     if [ "$DEBUG_IS_ENABLED" ]; then
-        echo "<${GREEN}"'debug'"${NC}>: $@" >&2
+        echo "<${GREEN}"'debug'"${NC}>: $*" >&2
         log "debug_log: $*"
     fi
 }
@@ -71,7 +71,7 @@ debug_log()
 # $1 = text to show
 echo_fatal()
 {
-    echo "<${RED}"'fatal'"${NC}> $@" >&2
+    echo "<${RED}"'fatal'"${NC}> $*" >&2
 }
 
 # echo bold
@@ -79,7 +79,7 @@ echo_fatal()
 #
 echo_bold()
 {
-    echo "$BOLD""$@""$NC"
+    echo "$BOLD""$*""$NC"
 }
 
 # echo livekit tag
@@ -90,19 +90,19 @@ echo_livekit()
 
 echo_livekit_msg()
 {
-    echo "<${BLUE}"'llkim'"${NC}> $@"
+    echo "<${BLUE}"'llkim'"${NC}> $*"
 }
 
 # echo error
 echo_err()
 {
-    echo "<${RED}"'error'"${NC}> $@" >&2
+    echo "<${RED}"'error'"${NC}> $*" >&2
 }
 
 # echo warn
 echo_warn()
 {
-    echo "[${YELLOW}"' warn! '"${NC}] $@" >&2
+    echo "[${YELLOW}"' warn! '"${NC}] $*" >&2
 }
 
 # echo signature
@@ -114,13 +114,13 @@ echo_sign()
 # log - store given text in /var/log/livedbg
 log()
 {
-    echo "$@" 2>/dev/null >>/var/log/livekit-log
+    echo "$*" 2>/dev/null >>/var/log/livekit-log
 }
 
 echolog()
 {
-    echo "$@"
-    log "echolog: $@"
+    echo "$*"
+    log "echolog: $*"
 }
 
 # show information about the debug shell
@@ -146,8 +146,8 @@ debug_shell()
 
 fatal()
 {
-    log "FatalError: $@"
-    echo_fatal "$@"
+    log "FatalError: $*"
+    echo_fatal "$*"
     echo_sign "EMERGENCY MODE" >&2
     echo_bold "Please consult /var/log/livekit-log for more info." >&2
     setsid sh -c 'exec sh < /dev/tty1 >/dev/tty1 2>&1'
