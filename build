@@ -83,8 +83,8 @@ fi
 ZIP_CMD="$(which zip 2>/dev/null)"
 if [ -z "$ZIP_CMD" ]; then
     # since a ZIP archive is the core, we have to go to fatal mode!
-    echo_fatal "build: 'zip': not-avail"
-    echo_fatal "build: 'zip': Critically needed!"
+    echo_err "build: 'zip': not-avail"
+    echo_err "build: 'zip': Critically needed!"
     (( ERRS+= 2 ))
 else
     echo_livekit_msg "build: 'zip': avail"

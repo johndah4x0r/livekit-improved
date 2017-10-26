@@ -106,16 +106,16 @@ NC="[0m"
 # debug related
 debug_start()
 {
-    if grep -q 'debug' /proc/cmdline; then
+    if grep -q 'dbglog' /proc/cmdline; then
         DEBUG_IS_ENABLED=1
     else
         DEBUG_IS_ENABLED=
     fi
 }
 
-dbg_shell_start()
+dbgsh_start()
 {
-    if grep -q 'dbg_shell' /proc/cmdline; then
+    if grep -q 'dbgsh' /proc/cmdline; then
         DBG_SHELL=1
     else
         DBG_SHELL=
@@ -125,49 +125,45 @@ dbg_shell_start()
 debug_log()
 {
     if [ "$DEBUG_IS_ENABLED" ]; then
-        echo "<${GREEN}"'debug'"${NC}>: $*" >&2
         log "debug_log: $*"
     fi
 }
 
 # echo related functions
 
-# echo fatal tag
-# $1 = text to show
-echo_fatal()
-{
-    echo "<${RED}"'fatal'"${NC}> $*" >&2
-}
-
 # echo bold
 # $1 = text to show
 #
 echo_bold()
 {
-    echo "$BOLD""$*""$NC"
+    echo -e "$BOLD""$*""$NC"
 }
 
 # echo livekit tag
 echo_livekit()
 {
-    echo -n "<${CYAN}"'llkim'"${NC}> "
+    echo -ne "\r"
+    echo -ne "[livekit:${CYAN}"'mesg'"${NC}] "
 }
 
 echo_livekit_msg()
 {
-    echo "<${CYAN}"'llkim'"${NC}> $*"
+    echo -ne "\r"
+    echo -e "[livekit:${CYAN}"'mesg'"${NC}] $*"
 }
 
 # echo error
 echo_err()
 {
-    echo "<${RED}"'error'"${NC}> $*" >&2
+    echo -ne "\r"
+    echo -e "[livekit:${RED}"'err!'"${NC}] $*" >&2
 }
 
 # echo warn
 echo_warn()
 {
-    echo "<${YELLOW}"'warn!'"${NC}> $*" >&2
+    echo -ne "\r"
+    echo -e "[livekit:${YELLOW}"'warn'"${NC}] $*" >&2
 }
 
 # echo signature
