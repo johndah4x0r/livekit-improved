@@ -175,6 +175,12 @@ echo_warn()
     echo -e "[livekit:${YELLOW}"'warn'"${NC}] $*" >&2
 }
 
+# echo wait
+echo_wait()
+{
+    echo -ne "[livekit:${ORANGE}"'wait'"${NC}] $*"
+}
+
 # echo signature
 echo_sign()
 {
