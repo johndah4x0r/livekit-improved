@@ -60,7 +60,6 @@ dbg_shell_start()
 debug_log()
 {
     if [ "$DEBUG_IS_ENABLED" ]; then
-        echo "<${GREEN}"'debug'"${NC}>: $*" >&2
         log "debug_log: $*"
     fi
 }
@@ -71,7 +70,7 @@ debug_log()
 # $1 = text to show
 echo_fatal()
 {
-    echo "<${RED}"'fatal'"${NC}> $*" >&2
+    echo "[${RED}"'err'"${NC}] $*" >&2
 }
 
 # echo bold
@@ -85,24 +84,24 @@ echo_bold()
 # echo livekit tag
 echo_livekit()
 {
-    echo -n "<${BLUE}"'llkim'"${NC}> "
+    echo -n "[${BLUE}"'msg'"${NC}] "
 }
 
 echo_livekit_msg()
 {
-    echo "<${BLUE}"'llkim'"${NC}> $*"
+    echo "[${BLUE}"'msg'"${NC}] $*"
 }
 
 # echo error
 echo_err()
 {
-    echo "<${RED}"'error'"${NC}> $*" >&2
+    echo "[${RED}"'err'"${NC}] $*" >&2
 }
 
 # echo warn
 echo_warn()
 {
-    echo "[${YELLOW}"' warn! '"${NC}] $*" >&2
+    echo "[${YELLOW}"'wrn'"${NC}] $*" >&2
 }
 
 # echo signature
