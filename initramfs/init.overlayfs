@@ -19,10 +19,10 @@ transfer_initramfs
 
 # Directory variables pointing to /memory
 MEMORY=/memory
-CHANGES=$MEMORY/changes
-UNION=$MEMORY/union
-DATAMNT=$MEMORY/data
-BUNDLES=$MEMORY/bundles
+CHANGES="$MEMORY"/changes
+UNION="$MEMORY"/union
+DATAMNT="$MEMORY"/data
+BUNDLES="$MEMORY"/bundles
 
 # Initliaise /proc, /sys and such
 init_proc_sysfs

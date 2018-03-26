@@ -99,8 +99,8 @@ if [ "$1" = "--init" ]; then
       if [ "$DEVICE" = "/dev/$i" ]; then
          echo "Attemptiong to eject /dev/$i..." >/dev/console
          eject /dev/$i
-         echo "CD/DVD tray will close in 6 seconds..." >/dev/console
-         sleep 6
+         echo "CD/DVD tray will close in 5 seconds..." >/dev/console
+         sleep 5
          eject -t /dev/$i
       fi
    done

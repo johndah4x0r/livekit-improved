@@ -20,7 +20,9 @@ echo            Boot setup: MyLinux
 echo ===========================================================
 echo  Drive letter: %DISK%
 echo ===========================================================
-echo  Thank you for choosing MyLinux!  
+echo  Thank you for choosing MyLinux!
+echo  We are now ready to install MyLinux to your disk!
+echo.
 echo  Just make sure this is not your C: drive, or else
 echo  your OS (that is, Windows) will not boot!
 echo.
@@ -50,7 +52,7 @@ echo Error: BootInstall.bat started from read-only media!
 goto pauseit
 
 :DiskNotFound
-echo Error: Drive letter is non-existant!
+echo Error: Cannot find drive!
 
 :pauseit
 echo Press any key to exit...

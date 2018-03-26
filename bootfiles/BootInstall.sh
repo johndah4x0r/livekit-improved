@@ -1,6 +1,20 @@
 #!/bin/sh
 # Setup booting from disk (USB or harddrive)
-# Requires: fdisk, df, tail, tr, cut, dd, sed
+# Requires: fdisk, df, tail, tr, cut, dd, sed, awk
+
+# Check if needed tools exists
+TOOLS_NEEDED=(fdisk df tail tr cut dd sed awk)
+for TOOL in $TOOLS_NEEDED; do
+    if ! command -v "$TOOL" >/dev/null 2>&1; then
+        TOOLS_MISSING="$TOOL $TOOLS_MISSING"
+    fi
+done
+
+if [ -n "$TOOLS_MISSING" ]; then
+    echo "$(basename "$0"): You lack some/all of the needed tools:" >&2
+    echo "$TOOLS_MISSING" >&2
+    exit 1
+fi
 
 # Make sure that we are root
 if [ $(id -u) -ne 0 ]; then
@@ -52,8 +66,11 @@ echo "  Just press 'Enter' to continue or press Ctrl-C"
 echo "  to cancel the installation..."
 read -p ' What are you waiting for... ' junk
 
+# Find out the device root resides on
+DISK="$(df / | awk '/^\/dev/ {print $1}' | tr -d [0-9])"
+
 # If he/she continues, check which disk are we on
-if [ "$DEV" = "/dev/sda" ] || [ "$DEV" = "/dev/hda" ]; then
+if [ "$DEV" = "$DISK" ]; then
     WARN_DISK=0
 else
     WARN_DISK=1
@@ -70,7 +87,7 @@ if [ $WARN_DISK -eq 0 ]; then
 
     read -p " ?] " CONFIRM
 
-    if test "$CONFIRM" != "$CONFIRM_TEXT"; then
+    if [ "$CONFIRM" != "$CONFIRM_TEXT" ]; then
        echo "> Incorrect phrase!" >&2
        echo "> No changes were made!" >&2
        exit 1
@@ -97,14 +114,14 @@ else
     echo "> Installation of EXTLinux bootloader was successful!"
 fi
 
-echo "> Initialising new MBR..." >&2
+echo "> Setting up MBR..." >&2
 
-# MBR
+# Setup MBR
 if [ "$DEV" != "$PART" ]; then
     # Setup MBR on the first block
-    dd bs=440 count=1 conv=notrunc if="$BOOT/mbr.bin" of="$DEV" 2>/dev/null
+    dd bs=440 count=1 conv=notrunc if="$BOOT/mbr.bin" of="$DEV" 2>&1 | tee "$LOGFILE" >/dev/null
 
-    # Toggle a bootable flag
+    # Toggle the bootable flag
     PART="$(echo "$PART" | sed -r "s:.*[^0-9]::")"
     (
         fdisk -l "$DEV" | fgrep "*" | fgrep "$DEV" | cut -d " " -f 1 \
@@ -112,7 +129,7 @@ if [ "$DEV" != "$PART" ]; then
         echo a
         echo $PART
         echo w
-    ) | fdisk $DEV >/dev/null 2>&1
+    ) | fdisk $DEV 2>&1 | tee "$LOGFILE" >/dev/null
 fi
 
 echo "Bootloader installation finished."

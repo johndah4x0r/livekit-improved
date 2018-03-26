@@ -26,9 +26,6 @@ cd "$CHANGEDIR"
 
 # Parse 'UNIFS' variable in .config
 # HELP: 'UNIFS'; variable to choose between
-# AUFS and OverlayFS. Check out docs/aufs_vs_overlay.txt
-# to learn more...
-cd .
 
 case "$UNIFS" in
     'aufs' | 'AUFS')
@@ -67,8 +64,7 @@ else
 fi
 
 # Check if either 'mkisofs' or 'genisoimage' exists
-MKISOFS="$(which mkisofs 2>/dev/null || \
-which genisoimage 2>/dev/null)"
+MKISOFS="$(which mkisofs 2>/dev/null || which genisoimage 2>/dev/null)"
 if [ -z "$MKISOFS" ]; then
     echo_warn "build: 'mkisofs' / 'genisoimage': not-avail"
     echo_err "build: 'mkisofs' / 'genisoimage': not-avail"
@@ -82,10 +78,10 @@ fi
 # Check if we have 'zip'
 ZIP_CMD="$(which zip 2>/dev/null)"
 if [ -z "$ZIP_CMD" ]; then
-    # since a ZIP archive is the core, we have to go to fatal mode!
+    # Zip archive is the bare needs for a successful build
     echo_err "build: 'zip': not-avail"
     echo_err "build: 'zip': Critically needed!"
-    (( ERRS+= 2 ))
+    (( ERRS+=2 ))
 else
     echo_livekit_msg "build: 'zip': avail"
 fi
@@ -120,7 +116,7 @@ read -p "Press Enter to continue or press Ctrl-C to cancel... " junk
 clear
 
 # Generate initramfs image (cpio-xz archive)
-echo_livekit_msg "build: Generating initial RAM filesystem image..."
+echo_livekit_msg "build: Generating initramfs..."
 
 cd initramfs
 INITRAMFS="$(./gen-initramfs "$LIVEKITNAME")"
@@ -133,10 +129,10 @@ BOOT="$LIVEKITDATA"/"$LIVEKITNAME"/boot
 mkdir -p "$BOOT"
 mkdir -p "$BOOT"/../changes
 mkdir -p "$BOOT"/../bundles
-mv "$INITRAMFS" $BOOT/initramfs.img
-cp bootfiles/* $BOOT
+mv "$INITRAMFS" "$BOOT"/initramfs.img
+cp bootfiles/* "$BOOT"
 
-# do substitution
+# Do substitution
 cat bootfiles/syslinux.cfg | sed -r "s:/boot/:/$LIVEKITNAME/boot/:" | \
 sed -r "s:MyLinux:$LIVEKITNAME:" > "$BOOT"/syslinux.cfg
 
@@ -163,7 +159,7 @@ fi
 # create compressed bundles
 COREMOD=""
 for i in $MKMOD; do
-    COREMOD="$COREMOD /$i"
+    COREMOD="/$i $COREMOD"
 done
 
 CMDOPT="$(get_exclude "$EXCLUDE" "$COREMOD")"
@@ -174,23 +170,23 @@ mkbund $COREMOD "${LIVEKITDATA}/${LIVEKITNAME}"/00-main-."$BEXT" \
 # copy rootcopy folder
 if [ -d rootcopy/ ]; then
     echo_livekit_msg "build: Copying contents of rootcopy/..."
-    cp -a rootcopy/ $LIVEKITDATA/$LIVEKITNAME/
+    cp -a rootcopy/ "$LIVEKITDATA"/"$LIVEKITNAME"/
 fi
 
 TARGET=/mnt/z
-if [ ! -d $TARGET ]; then
+if [ ! -d "$TARGET" ]; then
     TARGET=/tmp/livekit-build/
 fi
 
-if [ ! -d $TARGET ]; then
-    mkdir -p $TARGET &>/dev/null
+if [ ! -d "$TARGET" ]; then
+    mkdir -p "$TARGET" &>/dev/null
 fi
 
 # Output file
-OUT_FILE="$LIVEKITNAME-$ARCH-$PID"
+OUT_FILE="${LIVEKITNAME}-${ARCH}-${PID}"
 
 # Checksum file
-SUM_FILE="$TARGET/CHECKSUMS-${OUT_FILE}.TXT"
+SUM_FILE="${TARGET}/CHECKSUMS-${OUT_FILE}.TXT"
 
 # Go to Live Kit build data
 cd "$LIVEKITDATA"
@@ -199,9 +195,8 @@ cd "$LIVEKITDATA"
 echo_livekit_msg "build: Creating ISO file for CD boot..."
 
 # How the F@-- can it be more compact than this!?!?
-"$MKISOFS" -o "$TARGET/$OUT_FILE.iso" -v -J \
--R -D -A "$LIVEKITNAME" -V "$LIVEKITNAME" \
--no-emul-boot -boot-info-table -boot-load-size 4 \
+"$MKISOFS" -o "$TARGET/$OUT_FILE.iso" -v -J -R -D -A "$LIVEKITNAME" \
+-V "$LIVEKITNAME" -no-emul-boot -boot-info-table -boot-load-size 4 \
 -b "$LIVEKITNAME"/boot/isolinux.bin -c \
 "$LIVEKITNAME"/boot/isolinux.boot . &>/dev/null
 if [ $? -ne 0 ]; then
@@ -230,12 +225,12 @@ rm -Rf "$LIVEKITDATA"
 echo_livekit_msg "build: Process ID: $PID - Your results is in $TARGET"
 
 # Generate checksum(s)
-echo_livekit_msg "build: Generating MD5 checksums: Please wait..."
+echo_livekit_msg "build: Generating checksums: Please wait..."
 
 if [ "$SCAN" ]; then
     MD5_ISO="$(md5sum $TARGET/$OUT_FILE.iso 2>/dev/null | cut -d ' ' -f 1)"
 else
-    MD5_ISO="< FAILED TO GENERATE ISO IMAGE! >"
+    MD5_ISO="[ISO image non-existant]"
 fi
 
 MD5_ZIP="$(md5sum $TARGET/$OUT_FILE.zip 2>/dev/null | cut -d ' ' -f 1)"

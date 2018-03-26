@@ -22,7 +22,7 @@ get_exclude()
         fi
 
         echo "$EXCLUDE_LIST" | tr " " "\n" | grep "$i" | \
-        while read KEY; do
+        while read -r KEY; do
             echo -n "-e $KEY "
         done
     done
@@ -41,7 +41,7 @@ get_lowerdirs()
     MNT_OPT=""
 
     find "$BUND_DIRS" -maxdepth 1 -type d -name "*.${BUND_EXT}" | sort | {
-        while read BUND; do
+        while read -r BUND; do
             MNT_OPT="${BUND}:${MNT_OPT}"
         done
         MNT_OPT="${MNT_OPT%?}"
@@ -54,29 +54,24 @@ get_lowerdirs()
 # $1: Directory to test
 #
 # Return codes:
-# 0 - Success       (SUCC)
-# 1 - General error (NOT_POSIX)
-# 2 - Inaccessable  (NO_ACC)
+# 0 - Success
+# 1 - General error
+# 2 - Inaccessable 
 #
 posix_chk() {
-    local CWD F1 F2 SUCC NO_ACC NOT_POSIX TARGET
+    local CWD F1 F2 TARGET
 
     TARGET="$(realpath "$1")"
     CWD="$(pwd)"
     F1="${TARGET}/.file1"
     F2="${TARGET}/.file2"
 
-    # Return codes
-    SUCC=0
-    NOT_POSIX=1
-    NO_ACC=2
-
     # Check if read-only or inaccessable
-    touch "$F1" 2>/dev/null && test -e "$F1"
+    touch "$F1" 2>/dev/null && [ -e "$F1" ]
 
-    if [ $? -ne $SUCC ]; then
+    if [ $? -ne 0 ]; then
         cd "$CWD"
-        return $NO_ACC
+        return 2
     fi
 
     # Start the cruel proccess.
@@ -86,14 +81,14 @@ posix_chk() {
     ln -s "$F1" "$F2" 2>/dev/null && [ -e "$F2" ] && \
     rm -f "$F1" "$F2" 2>/dev/null
 
-    if [ $? -ne $SUCC ]; then
+    if [ $? -ne 0 ]; then
         cd "$CWD"
         rm "$F1"
-        return $NOT_POSIX
+        return 1
     else
         rm "$F1" "$F2"
         cd "$CWD"
-        return $SUCC
+        return 0
     fi
 }
 
@@ -145,40 +140,40 @@ echo_bold()
 # echo ok tag
 echo_ok() {
     echo -ne "\r"
-    echo -ne "[livekit:${GREEN}"'-ok-'"${NC}] $*"
+    echo -ne "(${GREEN}"'OK!'"${NC}) $*"
 }
 
 # echo livekit tag
 echo_livekit()
 {
     echo -ne "\r"
-    echo -ne "[livekit:${CYAN}"'mesg'"${NC}] "
+    echo -ne "(${CYAN}"'MSG'"${NC}) "
 }
 
 echo_livekit_msg()
 {
     echo -ne "\r"
-    echo -e "[livekit:${CYAN}"'mesg'"${NC}] $*"
+    echo -e "(${CYAN}"'MSG'"${NC}) $*"
 }
 
 # echo error
 echo_err()
 {
     echo -ne "\r"
-    echo -e "[livekit:${RED}"'err!'"${NC}] $*" >&2
+    echo -e "(${RED}"'ERR'"${NC}) $*" >&2
 }
 
 # echo warn
 echo_warn()
 {
     echo -ne "\r"
-    echo -e "[livekit:${YELLOW}"'warn'"${NC}] $*" >&2
+    echo -e "(${YELLOW}"'WRN'"${NC}) $*" >&2
 }
 
 # echo wait
 echo_wait()
 {
-    echo -ne "[livekit:${ORANGE}"'wait'"${NC}] $*"
+    echo -ne "(${ORANGE}"'...'"${NC}) $*"
 }
 
 # echo signature
@@ -203,8 +198,8 @@ echolog()
 show_debug_banner()
 {
    echo_sign "DEBUGGING MODE"
-   echo "Here's the root shell for you..." >&2
-   echo "Type your desired commands or hit Ctrl+D to continue bootup..." >&2
+   echo "Here's the root shell for you" >&2
+   echo "Type your desired commands or hit Ctrl-D to continue booting..." >&2
    echo >&2
 }
 
@@ -223,9 +218,14 @@ debug_shell()
 fatal()
 {
     log "FatalError: $*"
-    echo_fatal "$*"
+    echo_err "$*"
     echo_sign "EMERGENCY MODE" >&2
+    echo_bold "Last entry of \`dmesg | tail\`:" >&2
+    dmesg | tail >&2
+    echo >&2
     echo_bold "Please consult /var/log/livekit-log for more info." >&2
+    echo_bold "If you think that you have solved the proplem, then" >&2
+    echo_bold "you can take the risk, and hit Ctrl-D to continue booting." >&2
     setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
 }
 
@@ -234,8 +234,8 @@ fatal()
 #
 allow_only_root()
 {
-    if [ "0$UID" -ne 0 ]; then
-        echo_err "Only root can run $(basename $0)"; exit 1
+    if [ "0$(id -u)" -ne 0 ]; then
+        echo_err "Only root can run $(basename "$0")"; exit 1
     fi
 }
 
@@ -243,23 +243,30 @@ allow_only_root()
 # call mksquashfs with apropriate arguments
 # $1 = directory which will be compressed to squashfs bundle
 # $2 = output file
-# $3..$9 = optional arguments like -keep-as-directory or -b 123456789
+# $3..$9 = optional arguments like -keep-as-directory or -b <size, eg: 1024>k
 #
 mkbund()
 {
     debug_log "mkbund" "$*"
+    local SRC DEST
+    SRC="$1"
+    DEST="$2"
 
-    if [ -e "$2" ]; then
-        echo_warn "mkbund: $(basename $2): File already exists!"
-        echo_warn "mkbund: $(basename $2): Deleting file..."
+    # Move 2 variables forward
+    shift; shift
+
+    if [ -e "$DEST" ]; then
+        echo_warn "mkbund: $(basename "$DEST"): File already exists!"
+        echo_warn "mkbund: $(basename "$DEST"): Deleting file..."
         rm -f "$2"
     else
-        echo_livekit_msg "mkbund: $(basename $2): Making new bundle..."
+        echo_livekit_msg "mkbund: $(basename "$DEST"): Making new bundle..."
     fi
 
+    # $@: The rest of the arguments
     echo_livekit_msg "mkbund: SquashFS compression: 1024k - XZ" >&2
-    echo_livekit_msg "mkbund: $(basename $2): Compressing bundle..." >&2
-    mksquashfs "$1" "$2" -comp xz -b 1024k $3 $4 $5 $6 $7 $8 $9 >/dev/null || \
+    echo_livekit_msg "mkbund: $(basename "$2"): Compressing bundle..." >&2
+    mksquashfs "$SRC" "$DEST" -comp xz -b 1024k "$@" >/dev/null || \
     (echo_err "mkbund: Failed to make bundle!" && exit 1)
 }
 
@@ -270,8 +277,8 @@ mkbund()
 # a kernel panic
 # $* = text to output
 panic() {
-    echo_sign "PANIC TRIGGERED" >&2
-    echo_fatal "$*" >&2
+    echo_sign "INIT PANIC" >&2
+    echo_err "$*" >&2
     echo_bold "An irrecoverable fatal error occured!" >&2
     echo_bold "Please reboot this system NOW!" >&2
     echo_bold "Press Enter or wait 15 seconds to automatically reboot..."
@@ -285,7 +292,7 @@ panic() {
 #
 cmdline_value()
 {
-   cat /proc/cmdline | egrep -o "(^|[[:space:]])$1=[^[:space:]]+" | \
+   cat /proc/cmdline | grep -E -o "(^|[[:space:]])$1=[^[:space:]]+" | \
    tr -d " " | cut -d "=" -f 2- | tail -n 1
 }
 
@@ -327,9 +334,9 @@ modprobe_everything()
 {
     debug_log "modprobe_everything" "$*"
 
-    echo_livekit_msg "Modprobing kernel drivers..." >&2
+    echo_livekit_msg "Inserting kernel drivers..." >&2
 
-    find /lib/modules/ | fgrep '.ko' | xargs -n 1 modprobe 2>/dev/null
+    find /lib/modules/ | grep -F '.ko' | xargs -n 1 modprobe 2>/dev/null
     refresh_devs
 }
 
@@ -381,9 +388,9 @@ modprobe_overlay()
 
     modprobe overlay 2>>/var/log/livekit-log
 
-    # If overlay module failed to load, panic immidiately
+    # If overlay module failed to load, stop init
     if [ $? -ne 0 ]; then
-        panic "Failed to load OverlayFS module!"
+        fatal "Failed to load OverlayFS module!"
     fi
 
     # finally, refresh all devices
@@ -399,7 +406,7 @@ mounted_device()
 
     local MNT TARGET
     MNT="$1"
-    while [ "$MNT" != "/" -a "$MNT" != "." -a "$MNT" != "" ]; do
+    while [ "$MNT" != "/" ] && [ "$MNT" != "." ] && [ "$MNT" != "" ]; do
         TARGET="$(grep -F " $MNT " /proc/mounts | cut -d " " -f 1)"
         if [ "$TARGET" != "" ]; then
             echo "$TARGET"
@@ -418,7 +425,7 @@ mounted_dir()
 
     local MNT
     MNT="$1"
-    while [ "$MNT" != "/" -a "$MNT" != "." -a "$MNT" != "" ]; do
+    while [ "$MNT" != "/" ] && [ "$MNT" != "." ] && [ "$MNT" != "" ]; do
         if mountpoint -q "$MNT" 2>/dev/null; then
             echo "$MNT"
             return
@@ -438,7 +445,7 @@ device_bestfs()
 
     FS="$(blkid "$1" | sed -r "s/.*TYPE=//" | tr -d '"' | \
     tr "[A-Z]" "[a-z]" | cut -d ' ' -f 1)"
-    if [ "$FS" = "msdos" -o "$FS" = "fat" ]; then
+    if [ "$FS" = "msdos" ] || [ "$FS" = "fat" ]; then
         FS="vfat"
     elif [ "$FS" = "ntfs" ]; then
         FS="ntfs-3g"
@@ -515,25 +522,25 @@ init_network_dev()
 download_data_pxe()
 {
     debug_log "download_data_pxe" "$*"
-    local CMD CLIENT SERVER GW MASK PORT ETH PROTOCOL PXEFILEPATH
+    local CLIENT SERVER GW MASK PORT ETH PROTOCOL PXEFILEPATH
 
     mkdir -p "$1/$LIVEKITNAME"
 
-    cmdline_value ip | while IFS=":" read CLIENT SERVER GW MASK PORT; do
+    cmdline_value ip | while IFS=":" read -r CLIENT SERVER GW MASK PORT; do
         echo_livekit_msg "Downloading files from ${SERVER} ..." >&2
 
-        ETH=$(init_network_dev)
+        ETH="$(init_network_dev)"
         if [ "$PORT" = "" ]; then
             PORT="7529"
         fi
 
         # set IP address as given by boot paramter
         if [ -n "$CLIENT" ] && [ -n "$MASK" ]; then
-            ifconfig $ETH "$CLIENT" netmask "$MASK"
+            ifconfig "$ETH ""$CLIENT" netmask "$MASK"
             route add default gw "$GW"
         else
             # if client ip is unknown, try to get a DHCP lease
-            udhcpc -i $ETH -f -q
+            udhcpc -i "$ETH" -f -q
         fi
 
         # well known IP address of Google public DNS service
@@ -559,7 +566,7 @@ download_data_pxe()
                 wget -O "$1/$LIVEKITNAME/$FILE" "http://$SERVER:$PORT/$FILE"
             elif [ "$PROTOCOL" = "tftp" ]; then
                 echo_livekit_msg "PXE-TFTP: Downloading ${FILE}..." >&2
-                tftp -g -r "$FILE" -l "$1/$LIVEKITNAME/$FILE" $SERVER
+                tftp -g -r "$FILE" -l "$1/$LIVEKITNAME/$FILE" "$SERVER"
             fi
         done
     done
@@ -579,11 +586,11 @@ find_data_try()
     local DEVICE FS FROM OPTIONS
 
     mkdir -p "$1"
-    blkid | sort | cut -d: -f 1 | grep -E -v "/loop|/ram|/zram" | while read DEVICE; do
+    blkid | sort | cut -d: -f 1 | grep -E -v "/loop|/ram|/zram" | while read -r DEVICE; do
         FROM="$2"
         FS="$(device_bestfs "$DEVICE")"
-        OPTIONS="$(fs_options $FS)"
-        mount -r "$DEVICE" "$1" $FS $OPTIONS 2>/dev/null
+        OPTIONS="$(fs_options "$FS")"
+        mount -r "$DEVICE" "$1" "$FS" "$OPTIONS" 2>/dev/null
 
         # if the FROM parameter is actual file, mount it again as loop (eg. iso)
         if [ -f "$1/$FROM" ]; then
@@ -632,11 +639,11 @@ find_data()
     echo_livekit >&2
     echo "Looking for $LIVEKITNAME data in /$FROM ..." | tr -s "/" >&2
     for i in seq 1 $1; do
-        echo -n "." >&2
+        printf "." >&2
         refresh_devs
         DATA="$(find_data_try "$2" "$FROM")"
 
-        echo "\n" >&2
+        printf "\n\n" >&2
 
         if [ "$DATA" != "" ]; then
             echo_livekit_msg "$LIVEKITNAME data found on $(mounted_device "$2")" >&2
@@ -648,7 +655,7 @@ find_data()
     echo "" >&2
 
     if [ "$DATA" = "" ]; then
-        panic "$LIVEKITNAME data not found"
+        fatal "$LIVEKITNAME data not found"
     fi
 
 }
@@ -739,7 +746,7 @@ copy_to_ram()
 
     MDIR="$(mounted_dir "$1")"
     MDEV="$(mounted_device "$1")"
-    MDEV="$(losetup $MDEV 2>/dev/null | cut -d " " -f 3)"
+    MDEV="$(losetup "$MDEV" 2>/dev/null | cut -d " " -f 3)"
     umount "$MDIR" 2>/dev/null
 
     if [ "$MDEV" != "" ]; then
@@ -758,7 +765,7 @@ filter_load()
     if [ "$FILTER" = "" ]; then
         cat -
     else
-        cat - | egrep "$FILTER"
+        cat - | grep -E "$FILTER"
     fi
 }
 
@@ -771,7 +778,7 @@ filter_noload()
     if [ "$FILTER" = "" ]; then
         cat -
     else
-        cat - | egrep -v "$FILTER"
+        cat - | grep -E -v "$FILTER"
     fi
 }
 
@@ -802,9 +809,9 @@ prepare_overlay()
 
     # Just tell me why! Why be compact?!?
     ( ls -1 "$1" | sort -n ; cd "$1" ; find modules/ 2>/dev/null | \
-    sortmod | filter_load) | grep '[.]'$BEXT'$' |\
+    sortmod | filter_load) | grep '[.]'"$BEXT"'$' |\
     filter_noload | \
-    while read BUNDLE; do
+    while read -r BUNDLE; do
         BUN="$(basename "$BUNDLE")"
         echo_livekit_msg "Mounting $BUN to /memory/bundles..." >&2
         mkdir -p "$2/$BUN"
@@ -820,27 +827,30 @@ prepare_overlay()
     UPPERDIR="${CHANGEDIR}/.rootfs"
     WORKDIR="${CHANGEDIR}/.work"
 
-    # Make the both the upperdir and workdir (cuz it's non-existant, yet...)
+    # Make the both the upperdir and workdir ('cuz it's non-existant, yet...)
     mkdir "$UPPERDIR" >/dev/null 2>&1
     mkdir "$WORKDIR" >/dev/null 2>&1
 
     # Make the union directory (this might actually be an alarming bug)
     mkdir "$4" >/dev/null 2>&1
 
-    # Separate commands
+    # Separate commands (to avoid `sh' errors)
+    # Join all modules together into the 'lowerdir' of main overlay
     mkdir "$LOWERDIR" >/dev/null 2>&1
     mount -t overlay -o lowerdir="$ALL_BUNDS" overlay "$LOWERDIR" \
         >>/var/log/livekit-log 2>&1
+
     if [ $? -ne 0 ]; then
-        panic "Failed to mount lower directory of main OverlayFS union!"
+        fatal "Failed to mount lower directory of main OverlayFS union!"
     fi
 
+    # Join 'lowerdir' with the save directory (upperdir,workdir)
     mount -t overlay -o lowerdir="$LOWERDIR",upperdir="$UPPERDIR",workdir="$WORKDIR" \
     overlay "$4" >>/var/log/livekit-log 2>&1
 
     # Check if we got any errors...
     if [ $? -ne 0 ]; then
-        panic "Failed to mount main OverlayFS union!"
+        fatal "Failed to mount main OverlayFS union!"
     fi
 
 }
@@ -876,7 +886,7 @@ change_root()
     umount /proc
     umount /sys
 
-    cd "$1"
+    cd "$1" || return
 
     # Populate union
     echo_livekit_msg "Populating union..." >&2
@@ -893,15 +903,15 @@ change_root()
 
     # Find 'chroot' and 'init'
     echo_livekit_msg "Finding important commands... (chroot)" >&2
-    if [ -x bin/chroot -o -L bin/chroot ]; then  CHROOT=bin/chroot; fi
-    if [ -x sbin/chroot -o -L sbin/chroot ]; then  CHROOT=sbin/chroot; fi
-    if [ -x usr/bin/chroot -o -L usr/bin/chroot ]; then  CHROOT=usr/bin/chroot; fi
-    if [ -x usr/sbin/chroot -o -L usr/sbin/chroot ]; then CHROOT=usr/sbin/chroot; fi
+    if [ -x bin/chroot ] || [ -L bin/chroot ]; then  CHROOT=bin/chroot; fi
+    if [ -x sbin/chroot ] || [ -L sbin/chroot ]; then  CHROOT=sbin/chroot; fi
+    if [ -x usr/bin/chroot ] || [ -L usr/bin/chroot ]; then  CHROOT=usr/bin/chroot; fi
+    if [ -x usr/sbin/chroot ] || [ -L usr/sbin/chroot ]; then CHROOT=usr/sbin/chroot; fi
     if [ -z "$CHROOT" ]; then panic "chroot: Cannot find executable!"; fi
 
     echo_livekit_msg "Finding important commands... (init)" >&2
-    if [ -x bin/init -o -L bin/init ]; then INIT=bin/init; fi
-    if [ -x sbin/init -o -L sbin/init  ]; then INIT=sbin/init; fi
+    if [ -x bin/init ] || [ -L bin/init ]; then INIT=bin/init; fi
+    if [ -x sbin/init ] || [ -L sbin/init  ]; then INIT=sbin/init; fi
     if [ "$INIT" = "" ]; then panic "init: Cannot find executable!"; fi
 
     mkdir -p mnt/live
