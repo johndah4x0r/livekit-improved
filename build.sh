@@ -34,7 +34,7 @@ case "$UNIFS" in
 
         ;;
     'overlay' | 'overlayfs' | 'OverlayFS')
-        cp "$LLKIM_LIB_2" "$LLKIM_LIB"
+        cp "$LLKIM_LIB_2" "./livekitlib"
         cp "./initramfs/init.overlayfs" "./initramfs/init"
         ;;
     *)

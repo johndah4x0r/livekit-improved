@@ -16,16 +16,16 @@ system itself.
 You can pass these boot parameters to the bootloader:
 
 Live Kit parameters:
- >  debug      - Start the Live Kit in verbose mode.
- >  dbg_shell  - Start the debug shell several times while starting up.
- >  from={n}   - Load data from {n}. (will search all devices for the data)
- >  copy2ram   - Boot the Live Kit system just as normal, but also copy data to RAM.
- >  perch      - Activate persistent changes.
+ -  debug      - Start the Live Kit in verbose mode.
+ -  dbgsh      - Start the debug shell several times while starting up.
+ -  from={n}   - Load data from {n}. (will search all devices for the data)
+ -  copy2ram   - Boot the Live Kit system just as normal, but also copy data to RAM.
+ -  perch      - Activate persistent changes.
 
 Kernel parameters:
- >  noapic     - Disable APIC (if you want, or maybe if your kernel screams about it!)
- >  acpi=off   - Disable ACPI (if you might be still using a legacy system :P)
- >  init={n}   - Execute command {n} instead of the init script itself.
+ -  noapic     - Disable APIC (if you want, or maybe if your kernel screams about it!)
+ -  acpi=off   - Disable ACPI (if you might be still using a legacy system :P)
+ -  init={n}   - Execute command {n} instead of the init script itself.
 
 2] Bundles
 ===========================================================
@@ -36,12 +36,15 @@ functional predecessor of the bundle is called a 'module'.
 The bundle is an improved version of the 'module'.
 
 NOTE:
-  The defaults is 512k, but I opted with 1024k, since 
-  my system can handle that load, and I will get a smaller 
-  bundule size, which is a !!HUGE!! advantage!
-  And, note: this message is also from the future (2k17!), which means
-  that software has also evolved as the years has passed...
-  'mksquashfs' will go nuts if you supply it with '-bs' instead of '-b'...
+    The defaults is 512k, but I opted with 1024k, since 
+    my system can handle that load, and I will get a smaller 
+    bundule size, which is a !!HUGE!! advantage!
+
+    Some changes has to be done since software is also evolving
+    and changing with each passing day, I'm saying this since
+    'mksquashfs' will go nuts if you supply it with '-bs' instead of '-b'
+
+    
 
 How to make a bundle:
     # mksquashfs bundle_rootfs wholefs.{bext} -comp xz -b 1024k
@@ -74,11 +77,11 @@ compatibility with any other operating systems.
   the original Linux Live Kit. (http://linux-live.org/)
 
 Extracted from the original terminology.txt:
-> also known as Linux Live Kit. Formely known as Linux Live CD. Nowadays,
->  people mostly use USB flash drives, cameras, and other devices to run
->  such 'Live' linuxes, thus Live CD is no longer ideal name for it.
+- also known as Linux Live Kit. Formely known as Linux Live CD. Nowadays,
+-  people mostly use USB flash drives, cameras, and other devices to run
+-  such 'Live' linuxes, thus Live CD is no longer ideal name for it.
 
-> Meaning of Kit is like a tool, toolkit, or such. Which (I believe) corresponds
-> with the usage of such Live Linux distribution much better.
+- Meaning of Kit is like a tool, toolkit, or such. Which (I believe) corresponds
+- with the usage of such Live Linux distribution much better.
 
 

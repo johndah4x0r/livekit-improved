@@ -19,9 +19,9 @@ DL="http://www.kernel.org/pub/linux/utils/boot/syslinux/$PKGTGZ"
 
 # download, unpack, and patch syslinux
 if [ ! -d $PKG ]; then
-	rm -rf $PKG
-	wget --no-check-certificate -c "$DL"
-	tar -xf $PKGTGZ
+    rm -rf $PKG
+    wget --no-check-certificate -c "$DL"
+    tar -xf $PKGTGZ
 fi
 
 cd $PKG
@@ -30,7 +30,7 @@ sed -i -r "s:/boot/syslinux:/$LIVEKITNAME/boot:" core/fs/iso9660/iso9660.c
 sed -i -r "s:/boot/syslinux:/$LIVEKITNAME/boot:" core/fs/lib/loadconfig.c
 
 make \
-	${CC:+CC="$CC"}
+    ${CC:+CC="$CC"}
 echo
 echo "Copying isolinux.bin to $(readlink -f '../../bootfiles/isolinux.bin')"
 cp -p core/isolinux.bin ../../bootfiles/isolinux.bin

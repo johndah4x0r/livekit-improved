@@ -1,5 +1,6 @@
 #!/bin/sh
 # Initial script for Linux Live Kit / Linux Live Kit Improved
+# Orig. author: Tomas M <http://www.linux-live.org/>
 # Modified by @johndah4x0r <terencedoesmc12 AT gmail.com>
 
 # Modify and export/declare new PATH
@@ -90,4 +91,4 @@ echo_sign "INIT END"
 change_root "$UNION"
 
 # < ======== NOTHING SHOULD GO OVER THIS LINE! ======== >
-fatal "Unknown error!"
+fatal "Bug attack!"

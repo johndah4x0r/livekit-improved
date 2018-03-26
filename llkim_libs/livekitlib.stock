@@ -2,7 +2,7 @@
 
 # Functions library :: for Linux Live Kit scripts
 # Original author: Tomas M. <http://www.linux-live.org>
-# Modified by: 'JohnDaH4x0r' <terencedoesmc12 AT gmail DOT com>
+# Modified by @johndah4x0r <terencedoesmc12 AT gmail.com>
 
 # related to build script
 # get_exclude: Generate exclude arguments for 'mksquashfs'

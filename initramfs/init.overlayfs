@@ -1,6 +1,8 @@
 #!/bin/sh
-# Initial script for Live Kit Improved
-# Author: "JohnDaH4x0r" <terencedoesmc12 AT gmail.com>
+# Initial script for Live Kit Improved (OverlayFS)
+# Based on the originial Live Kit Init, rewritten for OverlayFS
+# Orig. author: Tomas M <http://www.linux-live.org/>
+# Author: @johndah4x0r <terencedoesmc12 AT gmail.com>
 
 # Export/declare new PATH
 NEWPATH=.:/:/usr/sbin:/usr/bin:/sbin:/bin
@@ -29,7 +31,8 @@ init_proc_sysfs
 
 # Initialise debugging if requested
 debug_start
-dbg_shell_start
+dbgsh_start
+
 
 # 1st debug shell interval
 debug_shell

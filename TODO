@@ -2,7 +2,4 @@
 * describe meaning of special files in bundles
 * PXE should include all possible .ko dependencies else some of the 
 networking modules won't work, like b44.ko
-<<<<<<< HEAD
-* Clean code for both AUFS and OverlayFS code
-=======
->>>>>>> c0167786775b64cf3717ced9769f70d4079defe2
+

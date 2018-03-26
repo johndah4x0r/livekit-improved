@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # Functions library for Live Kit Improved scripts
-# Modified by: JohnDaH4x0r <terencedoesmc12 AT gmail.com>
+# Based on the original Live Kit library, rewritten for OverlayFS.
+# Orig. author (Live Kit): Tomas M. <http://www.linux-live.org>
+# Modified by: @johndah4x0r <terencedoesmc12 AT gmail.com>
 
 # Related to build script
 # get_exclude: Generate exclude arguments for 'mksquashfs'
@@ -30,7 +32,7 @@ get_exclude()
 }
 
 # Get / generate lowerdirs argument for 'mount -t overlayfs'
-# $1: Bundle mountpoints directory "/memory/bundles"
+# $1: Bundle mountpoint directory "/memory/bundles"
 # $2: Bundle extension
 #
 get_lowerdirs()
@@ -94,8 +96,8 @@ posix_chk() {
 
 # NOTE: DO NOT TOUCH THE ESCAPE CHARACTERS!
 CYAN="[1;36m"
-YELLOW="[1;33m"
-ORANGE="[0;33m"
+YELW="[1;33m"
+ORNG="[0;33m"
 GREEN="[1;32m"
 BOLD="[0;1m"
 RED="[1;31m"
@@ -167,13 +169,13 @@ echo_err()
 echo_warn()
 {
     echo -ne "\r"
-    echo -e "(${YELLOW}"'WRN'"${NC}) $*" >&2
+    echo -e "(${YELW}"'WRN'"${NC}) $*" >&2
 }
 
 # echo wait
 echo_wait()
 {
-    echo -ne "(${ORANGE}"'...'"${NC}) $*"
+    echo -ne "(${ORNG}"'...'"${NC}) $*"
 }
 
 # echo signature
