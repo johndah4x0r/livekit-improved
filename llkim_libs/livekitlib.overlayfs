@@ -254,6 +254,8 @@ mkbund()
     SRC="$1"
     DEST="$2"
 
+    shift; shift;
+    
     if [ -e "$DEST" ]; then
         echo_warn "mkbund: $(basename "$DEST"): About to overwrite.."
         rm -f "$DEST"
@@ -263,7 +265,7 @@ mkbund()
 
     # $@: The rest of the arguments
     echo_livekit_msg "mkbund: SquashFS compression: 1024k - XZ" >&2
-    echo_livekit_msg "mkbund: $(basename "$2"): Compressing bundle..." >&2
+    echo_livekit_msg "mkbund: $(basename "$DEST"): Compressing bundle..." >&2
     mksquashfs "$SRC" "$DEST" -comp xz -b 1024k "$@" >/dev/null || \
     (echo_err "mkbund: Failed to make bundle!" && exit 1)
 }
