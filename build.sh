@@ -157,15 +157,12 @@ if [ -d ./include_bund/ ]; then
 fi
 
 # create compressed bundles
-COREMOD=""
 for i in $MKMOD; do
-    COREMOD="/$i $COREMOD"
+    CMDOPT="$(get_exclude "$EXCLUDE" "$i")"
+    echolog "CMDOPT = $CMDOPT" >&2
+    mkbund "/$i" "${LIVEKITDATA}/${LIVEKITNAME}"/00-main-"$i"."$BEXT" \
+        -keep-as-directory $CMDOPT
 done
-
-CMDOPT="$(get_exclude "$EXCLUDE" "$COREMOD")"
-echolog "CMDOPT = $CMDOPT" >&2
-mkbund $COREMOD "${LIVEKITDATA}/${LIVEKITNAME}"/00-main-."$BEXT" \
-    -keep-as-directory $CMDOPT
 
 # copy rootcopy folder
 if [ -d rootcopy/ ]; then
