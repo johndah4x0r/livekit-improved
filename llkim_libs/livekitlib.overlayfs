@@ -254,13 +254,9 @@ mkbund()
     SRC="$1"
     DEST="$2"
 
-    # Move 2 variables forward
-    shift; shift
-
     if [ -e "$DEST" ]; then
-        echo_warn "mkbund: $(basename "$DEST"): File already exists!"
-        echo_warn "mkbund: $(basename "$DEST"): Deleting file..."
-        rm -f "$2"
+        echo_warn "mkbund: $(basename "$DEST"): About to overwrite.."
+        rm -f "$DEST"
     else
         echo_livekit_msg "mkbund: $(basename "$DEST"): Making new bundle..."
     fi
@@ -365,7 +361,7 @@ init_devs()
 
 # Activate zram (auto-compression of RAM)
 # Compressed RAM consumes 1/2 or even 1/4 of original size
-# Setup static size of 500MB
+# Setup static size of 500MiB
 #
 init_zram()
 {
