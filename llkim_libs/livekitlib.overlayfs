@@ -490,7 +490,7 @@ init_network_dev()
     ni65 sb1000 sealevel smc-ultra sis900 smc9194 wd)
 
     # Do a simple brute force loading
-    for MOD in $DRVS; do
+    for MOD in ${DRVS[*]}; do
         # Load kernel module
         modprobe "$MOD" 2>/dev/null
 
