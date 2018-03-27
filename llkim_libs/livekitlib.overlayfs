@@ -58,7 +58,7 @@ get_lowerdirs()
 # Return codes:
 # 0 - Success
 # 1 - General error
-# 2 - Inaccessable 
+# 2 - Inaccessable
 #
 posix_chk() {
     local CWD F1 F2 TARGET
