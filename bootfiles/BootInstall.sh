@@ -47,6 +47,7 @@ if [ -z "$EXTLINUX" ]; then
     EXTLINUX="./extlinux.exe"
 else
     echo "System command: $EXTLINUX"
+fi
 
 # Prompt user
 #
@@ -79,7 +80,7 @@ fi
 if [ $WARN_DISK -eq 0 ]; then
     # APT-like danger prompt
     CONFIRM_TEXT="Yes, do as I say!"
-    
+
     echo "> Current partition: $PART" >&2
     echo "> You are about to do something " >&2
     echo "> dangerous to your system!" >&2
