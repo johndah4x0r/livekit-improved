@@ -158,8 +158,8 @@ fi
 
 # create compressed bundles
 for i in $MKMOD; do
+    echo
     CMDOPT="$(get_exclude "$EXCLUDE" "$i")"
-    echolog "CMDOPT = $CMDOPT" >&2
     mkbund "/$i" "${LIVEKITDATA}/${LIVEKITNAME}/00-main-${i}.${BEXT}" \
         "$CMDOPT" -keep-as-directory
 done
