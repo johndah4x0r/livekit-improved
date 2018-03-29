@@ -258,6 +258,6 @@ echo_livekit_msg "Build process finished!"
 echo "Have a nice day!"
 
 
-read -pr "Press Enter to continue..." >/dev/null
+read -r -p "Press Enter to continue..." >/dev/null
 cd "$CWD" || (sync; exit)
 sync
