@@ -115,7 +115,7 @@ echo "  + Live Kit name: $LIVEKITNAME"
 echo "  + Bundle extension: '.$BEXT'"
 echo "  + Unification FS: $UNIFS"
 
-read -pr "Press Enter to continue or press Ctrl-C to cancel... " >/dev/null
+read -r -p "Press Enter to continue or press Ctrl-C to cancel... " >/dev/null
 
 # It's time to rock 'n roll!
 clear
