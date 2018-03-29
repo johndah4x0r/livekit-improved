@@ -637,12 +637,12 @@ find_data()
     if [ "$FROM" = "" ]; then FROM="$LIVEKITNAME"; fi
     echo_livekit >&2
     echo "Looking for $LIVEKITNAME data in /$FROM ..." | tr -s "/" >&2
-    for i in seq 1 $1; do
+    for i in $(seq 1 $1); do
         printf "." >&2
         refresh_devs
         DATA="$(find_data_try "$2" "$FROM")"
 
-        echo >&2
+        echo "\n" >&2
 
         if [ "$DATA" != "" ]; then
             echo_livekit_msg "$LIVEKITNAME data found on $(mounted_device "$2")" >&2
