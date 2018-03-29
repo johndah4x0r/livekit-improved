@@ -8,14 +8,17 @@
 export PATH="${PATH}:.:./tools:../tools"
 
 # Data and variables
-LLKIM_LIB="./llkim_libs/livekitlib.stock"
-CONFIG="./.config"
+LLKIM_LIB_1="./llkim_libs/livekitlib.stock"
 LLKIM_LIB_2="./llkim_libs/livekitlib.overlayfs"
+CONFIG="./.config"
+
+LLKIM_LIB="./livekitlib"
 
 source "$CONFIG" || exit 1
-source "$LLKIM_LIB"|| exit 1
+source "$LLKIM_LIB_1"|| exit 1
 
-# only root can continue, because only root can read all files from your system
+# only root can continue, because only root can
+# read all files from your system
 allow_only_root
 
 # Change directory to build environment
@@ -26,15 +29,14 @@ cd "$CHANGEDIR"
 
 # Parse 'UNIFS' variable in .config
 # HELP: 'UNIFS'; variable to choose between
-
 case "$UNIFS" in
     'aufs' | 'AUFS')
-        cp "$LLKIM_LIB" "./livekitlib"
+        cp "$LLKIM_LIB_1" "$LLKIM_LIB"
         cp "./initramfs/init.stock" "./initramfs/init"
 
         ;;
     'overlay' | 'overlayfs' | 'OverlayFS')
-        cp "$LLKIM_LIB_2" "./livekitlib"
+        cp "$LLKIM_LIB_2" "$LLKIM_LIB"
         cp "./initramfs/init.overlayfs" "./initramfs/init"
         ;;
     *)
@@ -44,7 +46,7 @@ case "$UNIFS" in
 esac
 
 # Re-source livekitlib
-source "./livekitlib" || exit 1
+source "$LLKIM_LIB" || exit 1
 
 # It's building time!
 clear
@@ -52,7 +54,8 @@ clear
 echo_sign "BUILD SCRIPT"
 echo_livekit_msg "build: Doing a self-check..."
 
-# Start with 0 errors
+# Check for tools
+## Start with 0 errors
 ERRS=0
 
 # Check if mksquashfs supports XZ compression
