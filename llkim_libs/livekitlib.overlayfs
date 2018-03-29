@@ -642,7 +642,7 @@ find_data()
         refresh_devs
         DATA="$(find_data_try "$2" "$FROM")"
 
-        printf "\n\n" >&2
+        echo >&2
 
         if [ "$DATA" != "" ]; then
             echo_livekit_msg "$LIVEKITNAME data found on $(mounted_device "$2")" >&2
