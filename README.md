@@ -14,14 +14,14 @@ the original Linux Live Kit.
 ## Before you build:
 ***
 - Store Linux Live Kit in a directory which is not going
-  to be included in your result distro, or else it would 
+  to be included in your result distro, or else it would
   be copied to it. The best practice is to make a directory
   such as for ex.: '/tmp/a', and put all the files there.
 
   ### NOTE:
   Make sure to extract and use it on a POSIX-compatible
-  filesystem (for ex: EXT4), since it will create symlinks 
-  and such that might not be compatible in for example: FAT 
+  filesystem (eg. EXT4), since it will create symlinks
+  and such that might not be compatible in for example: FAT
   and such other filesystems.
 
 - Before you start building your Live Kit, please consider
@@ -31,12 +31,12 @@ the original Linux Live Kit.
 - Make sure that the following scripts are executable:
     * ./build
     * ./livekitlib
-    * ./initramfs/init (really important, else the kernel will panic!)
-    * ./initramfs/gen-initramfs (it is supposed to be executable :P)
+    * ./initramfs/init (really important, else the kernel goes haywire)
+    * ./initramfs/gen-initramfs (it is supposed to be executable)
 
-- Make sure you are pointing to the right kernel. If in doubt, 
-  change the path in '.config'. Your kernel must support both 
-  SquashFS and {AUFS || OverlayFS}, or else you will get an error 
+- Make sure you are pointing to the right kernel. If in doubt,
+  change the path in '.config'. Your kernel must support both
+  SquashFS and {AUFS || OverlayFS}, or else you will get an error
   both while building, and when you actually boot your Live Kit system.
 
   ### PROTIP:
@@ -49,14 +49,14 @@ the original Linux Live Kit.
 
   * If you don't need AUFS, or you are just too lazy to compile a
     custom kernel, then go with OverlayFS. It's supported in most
-    Linux distros (except Debian), and even custom Linux systems that are
+    Linux distros, and even custom Linux systems that are
     built around a kernel that have OverlayFS enabled.
 
 - It's recommended to replace boot background in
   bootfiles/bootpic.png and edit syslinux.cfg to fit your needs.
 
   ### NOTE:
-  * When editing the configuration file, make sure to keep all paths
+  * When editing 'syslinux.cfg', make sure to keep all paths
     pointing to /boot/, since it will be replaced to /LIVEKITNAME/boot/
     during the build session.
 
@@ -65,13 +65,13 @@ the original Linux Live Kit.
   by your own statically linked binaries, if you know how to compile them.
 
 - If you want to boot your Live Kit from a CD, you'll need to recompile
-  syslinux.bin and/or isolinux.bin else it won't be able to boot 
+  syslinux.bin and/or isolinux.bin else it won't be able to boot
   your Live Kit from directory "/LIVEKITNAME".
- 
-  There is a script prepared for you which will do all of the building. 
-  Simply go to directory ./tools/ and run isolinux.bin-update, it will rebuild 
-  isolinux.bin automatically by downloading SysLinux sources, patching them using 
-  your actual LIVEKITNAME and recompiling. This step is not needed if you only need 
+
+  There is a script prepared for you which will do all of the building.
+  Simply go to directory ./tools/ and run isolinux.bin-update, it will rebuild
+  isolinux.bin automatically by downloading SYSLinux sources, patching them using
+  your actual LIVEKITNAME and recompiling. This step is not needed if you only need
   the ZIP archive version.
 
 - If you have tmpfs mounted on /tmp, make sure you have enough (or maybe even
@@ -90,4 +90,3 @@ The script will automatically:
   * Do all the hard work for you
   * Will automatically check for errors
   * Will warn you if you don't have the correct programs installed
-

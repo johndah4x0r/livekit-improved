@@ -130,7 +130,7 @@ if [ "$DEV" != "$PART" ]; then
         echo a
         echo $PART
         echo w
-    ) | fdisk $DEV 2>&1 | tee "$LOGFILE" >/dev/null
+    ) | fdisk "$DEV" 2>&1 | tee "$LOGFILE" >/dev/null
 fi
 
 echo "Bootloader installation finished."
