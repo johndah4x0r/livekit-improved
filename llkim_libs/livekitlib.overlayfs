@@ -187,7 +187,7 @@ echo_sign()
 # log - store given text in /var/log/livedbg
 log()
 {
-    echo "$*" 2>/dev/null >>/var/log/livekit-log
+    echo "$*" >>/var/log/livekit-log
 }
 
 echolog()
@@ -319,13 +319,13 @@ transfer_initramfs()
 #
 init_proc_sysfs()
 {
-   debug_log "init_proc_sysfs" "$*"
-   mkdir -p /proc /sys /etc "$MEMORY"
-   mount -n -t proc proc /proc
-   echo "0" >/proc/sys/kernel/printk
-   mount -n -t sysfs sysfs /sys
-   mount -n -o remount,rw rootfs /
-   ln -sf /proc/mounts /etc/mtab
+    debug_log "init_proc_sysfs" "$*"
+    mkdir -p /proc /sys /etc "$MEMORY"
+    mount -n -t proc proc /proc
+    echo "0" >/proc/sys/kernel/printk
+    mount -n -t sysfs sysfs /sys
+    mount -n -o remount,rw rootfs /
+    ln -sf /proc/mounts /etc/mtab
 }
 
 
@@ -353,12 +353,12 @@ refresh_devs()
 # make sure some devices are there
 init_devs()
 {
-   debug_log "init_devs" "$*"
-   modprobe zram 2>/dev/null
-   modprobe loop 2>/dev/null
-   modprobe squashfs 2>/dev/null
-   modprobe fuse 2>/dev/null
-   refresh_devs
+    debug_log "init_devs" "$*"
+    modprobe zram 2>/dev/null
+    modprobe loop 2>/dev/null
+    modprobe squashfs 2>/dev/null
+    modprobe fuse 2>/dev/null
+    refresh_devs
 }
 
 # Activate zram (auto-compression of RAM)
@@ -384,7 +384,7 @@ modprobe_overlay()
     debug_log "modprobe_overlay" "$*"
 
     # Prepare for error messages
-    echo >>/var/log/livkekit-log
+    echo >>/var/log/livekit-log
 
     modprobe overlay 2>>/var/log/livekit-log
 
@@ -585,7 +585,7 @@ find_data_try()
     local DEVICE FS FROM OPTIONS
 
     mkdir -p "$1"
-    blkid | sort | cut -d: -f 1 | grep -E -v "/loop|/ram|/zram" | while read -r DEVICE; do
+    blkid | sort | cut -d : -f 1 | grep -E -v "/loop|/ram|/zram" | while read -r DEVICE; do
         FROM="$2"
         FS="$(device_bestfs "$DEVICE")"
         OPTIONS="$(fs_options "$FS")"
@@ -642,7 +642,7 @@ find_data()
         refresh_devs
         DATA="$(find_data_try "$2" "$FROM")"
 
-        echo "\n" >&2
+        echo -e "\n" >&2
 
         if [ "$DATA" != "" ]; then
             echo_livekit_msg "$LIVEKITNAME data found on $(mounted_device "$2")" >&2
