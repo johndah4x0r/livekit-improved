@@ -266,7 +266,7 @@ mkbund()
     # $@: The rest of the arguments
     echo_livekit_msg "mkbund: SquashFS compression: 1024k - XZ" >&2
     echo_livekit_msg "mkbund: $(basename "$DEST"): Compressing bundle..." >&2
-    mksquashfs "$SRC" "$DEST" -comp xz -b 1024k $@ >/dev/null 2>&1 || \
+    mksquashfs "$SRC" "$DEST" -comp xz -b 1024k "$@" >/dev/null 2>&1 || \
     (echo_err "mkbund: Failed to make bundle!" && exit 1)
 }
 
@@ -679,6 +679,12 @@ persistent_changes()
         return
     fi
 
+    # If copy2ram is active, end here
+    if grep -q 'copy2ram' /proc/cmdline; then
+        echo_warn "Cannot enable persistent changes; Copy2RAM is active..."
+        return
+    fi
+
     echo_livekit_msg "Testing persistent changes for POSIX compatibility..." >&2
 
     posix_chk "$CHANGES"
@@ -732,6 +738,7 @@ copy_to_ram()
 
     local MDIR MDEV RAM CHANGES
 
+    # Exit if not requested
     if grep -vq 'copy2ram' /proc/cmdline; then
         echo "$1"
         return
@@ -826,7 +833,7 @@ prepare_overlay()
     UPPERDIR="${CHANGEDIR}/.rootfs"
     WORKDIR="${CHANGEDIR}/.work"
 
-    # Make the both the upperdir and workdir ('cuz it's non-existant, yet...)
+    # Make the both the upperdir and workdir
     mkdir "$UPPERDIR" >/dev/null 2>&1
     mkdir "$WORKDIR" >/dev/null 2>&1
 
@@ -836,7 +843,7 @@ prepare_overlay()
     # Separate commands (to avoid `sh' errors)
     # Join all modules together into the 'lowerdir' of main overlay
     mkdir "$LOWERDIR" >/dev/null 2>&1
-    mount -t overlay -o lowerdir="$ALL_BUNDS" overlay "$LOWERDIR" \
+    mount -t overlay -o lowerdir="$ALL_BUNDS" union "$LOWERDIR" \
         >>/var/log/livekit-log 2>&1
 
     if [ $? -ne 0 ]; then
@@ -845,7 +852,7 @@ prepare_overlay()
 
     # Join 'lowerdir' with the save directory (upperdir,workdir)
     mount -t overlay -o lowerdir="$LOWERDIR",upperdir="$UPPERDIR",workdir="$WORKDIR" \
-    overlay "$4" >>/var/log/livekit-log 2>&1
+    union "$4" >>/var/log/livekit-log 2>&1
 
     # Check if we got any errors...
     if [ $? -ne 0 ]; then
@@ -866,7 +873,7 @@ fstab_create()
     echo_livekit_msg "Generating base /etc/fstab..." >&2
 
     { \
-        echo 'overlay / overlay defaults 0 0'; \
+        echo 'union / overlay defaults 0 0'; \
         echo 'proc /proc proc defaults 0 0'; \
         echo 'sysfs /sys sysfs defaults 0 0'; \
         echo 'devpts /dev/pts devpts gid=5,mode=620 0 0'; \

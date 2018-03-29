@@ -11,8 +11,6 @@
 # - make
 # - find static binaries in /usr/src/buildroot-sources/output/target/bin/ etc
 #
-# - all sources can be found at http://ftp.slax.org/Slax-7.0-development/sources/Slax-7.0-sources
-
 # Automatically determine the architecture we're building on:
 if [ -z "$MYARCH" ]; then
   case "$( uname -m )" in
@@ -23,7 +21,7 @@ if [ -z "$MYARCH" ]; then
   esac
 fi
 
-ln -f busybox-$MYARCH ./busybox
-ln -f mount.ntfs-3g-$MYARCH ./mount.ntfs-3g
-ln -f mount.dynfilefs-$MYARCH ./mount.dynfilefs
-ln -f eject-$MYARCH ./eject
+ln -f busybox-"$MYARCH" ./busybox
+ln -f mount.ntfs-3g-"$MYARCH" ./mount.ntfs-3g
+ln -f mount.dynfilefs-"$MYARCH" ./mount.dynfilefs
+ln -f eject-"$MYARCH" ./eject

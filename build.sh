@@ -22,8 +22,8 @@ source "$LLKIM_LIB_1"|| exit 1
 allow_only_root
 
 # Change directory to build environment
-CHANGEDIR="$(dirname $0)"
-echo "Changing current directory to $CHANGEDIR"
+CHANGEDIR="$(dirname "$0")"
+echo "Changing current directory to '$CHANGEDIR'"
 CWD="$(pwd)"
 cd "$CHANGEDIR"
 
@@ -58,24 +58,26 @@ echo_livekit_msg "build: Doing a self-check..."
 ## Start with 0 errors
 ERRS=0
 
-# Check if mksquashfs supports XZ compression
-if [ -z "$(mksquashfs 2>&1 | grep "Xdict-size")" ]; then
-    echo_err "build: 'mksquashfs': not-avail / not-supported"
+# Check if mksquashfs exists
+if ! command -v mksquashfs >/dev/null 2>&1; then
+    echo_err "build: 'mksquashfs': Not found"
+    (( ERRS+=1 ))
+elif ! (mksquashfs 2>&1 | grep -q "Xdict-size"); then
+    echo_err "build: 'mksquashfs': Not supported"
     (( ERRS+=1 ))
 else
-    echo_livekit_msg "build: 'mksquashfs': avail + supported"
+    echo_livekit_msg "build: 'mksquashfs': Found & supported"
 fi
 
 # Check if either 'mkisofs' or 'genisoimage' exists
 MKISOFS="$(which mkisofs 2>/dev/null || which genisoimage 2>/dev/null)"
 if [ -z "$MKISOFS" ]; then
-    echo_warn "build: 'mkisofs' / 'genisoimage': not-avail"
-    echo_err "build: 'mkisofs' / 'genisoimage': not-avail"
+    echo_warn "build: '\$MKISOFS': Not found"
 
-    # Hahaha! 'false'?!?!?
+    # Substitute $MKISOFS with `false`
     MKISOFS="false"
 else
-    echo_livekit_msg "build: '$(basename $MKISOFS)': avail"
+    echo_livekit_msg "build: '\$MKISOFS': $(basename "$MKISOFS")"
 fi
 
 # Check if we have 'zip'
@@ -113,7 +115,7 @@ echo "  + Live Kit name: $LIVEKITNAME"
 echo "  + Bundle extension: '.$BEXT'"
 echo "  + Unification FS: $UNIFS"
 
-read -p "Press Enter to continue or press Ctrl-C to cancel... " junk
+read -pr "Press Enter to continue or press Ctrl-C to cancel... " >/dev/null
 
 # It's time to rock 'n roll!
 clear
@@ -141,8 +143,8 @@ sed -r "s:MyLinux:$LIVEKITNAME:" > "$BOOT"/syslinux.cfg
 
 echo_livekit_msg "build: BootInstall.*: Replacing 'MyLinux' with '$LIVEKITNAME'..."
 cat bootfiles/BootInstall.bat | sed -r "s:/boot/:/$LIVEKITNAME/boot/:" | \
-    sed -r "s:\\\\boot\\\\:\\\\$LIVEKITNAME\\\\boot\\\\:" | fgrep -iv "rem" | \
-    sed -r "s:MyLinux:$LIVEKITNAME:" > $BOOT/BootInstall.bat
+    sed -r "s:\\\\boot\\\\:\\\\$LIVEKITNAME\\\\boot\\\\:" | grep -F -iv "rem" | \
+    sed -r "s:MyLinux:$LIVEKITNAME:" > "$BOOT"/BootInstall.bat
 cat bootfiles/BootInstall.sh | sed -r "s:MyLinux:$LIVEKITNAME:" > "$BOOT"/BootInstall.sh
 
 echo_livekit_msg "build: Copying kernel..."
@@ -154,8 +156,8 @@ cp "$VMLINUZ" "$BOOT"/
 if [ -d ./include_bund/ ]; then
     echo_livekit_msg "build: Copying bundles from include_bund/ ..."
     find include_bund/ -type f -name "*.$BEXT" | \
-    while read BUND; do
-        cp $BUND "$LIVEKITDATA"/"$LIVEKITNAME"/bundles/
+    while read -r  BUND; do
+        cp "$BUND" "${LIVEKITDATA}/${LIVEKITNAME}"/bundles/
     done
 fi
 
@@ -189,7 +191,7 @@ OUT_FILE="${LIVEKITNAME}-${ARCH}-${PID}"
 SUM_FILE="${TARGET}/CHECKSUMS-${OUT_FILE}.TXT"
 
 # Go to Live Kit build data
-cd "$LIVEKITDATA"
+cd "$LIVEKITDATA" || (sync; exit 1)
 
 # Create ISO image
 echo_livekit_msg "build: Creating ISO file for CD boot..."
@@ -208,13 +210,13 @@ else
 fi
 
 # Substitute 'mylinux' with $LIVEKITNAME
-cat "$CWD/bootinfo.txt" | fgrep -v "#" | \
+cat "$CWD/bootinfo.txt" | grep -F -v "#" | \
     sed -r "s/mylinux/$LIVEKITNAME/" | sed -r "s/\$//" > readme.txt
 
 # Create ZIP archive for "universal" use
 echo_livekit_msg "build: Creating ZIP for USB boot..."
 rm -f "$TARGET/$OUT_FILE.zip"
-zip -0 -r "$TARGET/$OUT_FILE.zip" * &>/dev/null
+zip -1 -r "$TARGET/$OUT_FILE.zip" ./* &>/dev/null
 echo_livekit_msg "build: Output file: $OUT_FILE.zip"
 
 echo_livekit_msg "build: Cleaning up..."
@@ -228,17 +230,17 @@ echo_livekit_msg "build: Process ID: $PID - Your results is in $TARGET"
 echo_livekit_msg "build: Generating checksums: Please wait..."
 
 if [ "$SCAN" ]; then
-    MD5_ISO="$(md5sum $TARGET/$OUT_FILE.iso 2>/dev/null | cut -d ' ' -f 1)"
+    MD5_ISO="$(md5sum "${TARGET}/${OUT_FILE}".iso 2>/dev/null | cut -d ' ' -f 1)"
 else
     MD5_ISO="[ISO image non-existant]"
 fi
 
-MD5_ZIP="$(md5sum $TARGET/$OUT_FILE.zip 2>/dev/null | cut -d ' ' -f 1)"
+MD5_ZIP="$(md5sum "${TARGET}/${OUT_FILE}".zip 2>/dev/null | cut -d ' ' -f 1)"
 
 cat >"$SUM_FILE" <<EOF
 Linux Live Kit Improved
 ----------------------------------------
-Date: `date`
+Date: $(date)
 Process ID: $PID
 Live Kit name: $LIVEKITNAME
 MD5 Checksums for this build:
@@ -256,6 +258,6 @@ echo_livekit_msg "Build process finished!"
 echo "Have a nice day!"
 
 
-read -p "Press Enter to continue..." junk
-cd "$CWD"
+read -pr "Press Enter to continue..." >/dev/null
+cd "$CWD" || (sync; exit)
 sync

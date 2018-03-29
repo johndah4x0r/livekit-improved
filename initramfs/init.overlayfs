@@ -46,7 +46,7 @@ init_zram
 modprobe_everything
 
 # Find data dir with filesystem bundles
-# NEW: 
+# NEW:
 # Only 15 seconds before timeout, to minimize the
 # pain of waiting a "whole" minute.
 #
@@ -67,7 +67,7 @@ DATA="$(copy_to_ram "$DATA" "$CHANGES")"
 # 4th debug shell interval
 debug_shell
 
-# Append bundles to union
+# Prepare overlay "union"
 prepare_overlay "$DATA" "$BUNDLES" "$CHANGES" "$UNION"
 
 # 5th debug shell interval
