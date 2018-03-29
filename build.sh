@@ -166,7 +166,7 @@ for i in $MKMOD; do
     echo
     CMDOPT="$(get_exclude "$EXCLUDE" "$i")"
     mkbund "/$i" "${LIVEKITDATA}/${LIVEKITNAME}/00-main-${i}.${BEXT}" \
-        "$CMDOPT" -keep-as-directory
+        $CMDOPT -keep-as-directory
 done
 
 # copy rootcopy folder
