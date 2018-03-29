@@ -73,8 +73,8 @@ mknod "$INITRAMFS"/dev/tty4 c 4 4
 #copy_including_deps /usr/bin/strace
 #copy_including_deps /usr/bin/lsof
 
-copy_including_deps /"$LMK"/kernel/fs # all filesystems
-copy_including_deps /"$LMK"/kernel/drivers/staging/zsmalloc # needed by zram
+copy_including_deps /"$LMK"/kernel/fs   # all filesystems
+copy_including_deps /"$LMK"/kernel/mm    # needed by zram
 copy_including_deps /"$LMK"/kernel/drivers/block/zram
 copy_including_deps /"$LMK"/kernel/drivers/block/loop.*
 
