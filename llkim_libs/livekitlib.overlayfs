@@ -106,7 +106,7 @@ NC="[0m"
 # debug related
 debug_start()
 {
-    if grep -q 'dbglog' /proc/cmdline; then
+    if grep -q 'debug' /proc/cmdline; then
         DEBUG_IS_ENABLED=1
     else
         DEBUG_IS_ENABLED=
