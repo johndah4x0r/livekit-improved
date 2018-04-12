@@ -386,7 +386,7 @@ modprobe_overlay()
     # Prepare for error messages
     echo >>/var/log/livekit-log
 
-    modprobe overlay 2>>/var/log/livekit-log
+    modprobe overlay >>/var/log/livekit-log 2>&1
 
     # If overlay module failed to load, stop init
     if [ $? -ne 0 ]; then
