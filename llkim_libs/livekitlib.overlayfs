@@ -585,24 +585,24 @@ find_data_try()
     local DEVICE FS FROM OPTIONS
 
     mkdir -p "$1"
-    blkid | sort | cut -d : -f 1 | grep -E -v "/loop|/ram|/zram" | while read -r DEVICE; do
+    blkid | sort | cut -d: -f 1 | grep -E -v "/loop|/ram|/zram" | while read -r DEVICE; do
         FROM="$2"
         FS="$(device_bestfs "$DEVICE")"
         OPTIONS="$(fs_options "$FS")"
-        mount -r "$DEVICE" "$1" "$FS" "$OPTIONS" 2>/dev/null
+        mount -r "$DEVICE" "$1" "$FS" "$OPTIONS" >>/var/log/livekit-log 2>&1
 
         # if the FROM parameter is actual file, mount it again as loop (eg. iso)
         if [ -f "$1/$FROM" ]; then
-            mount -o remount,rw "$DEVICE" "$1" 2>/dev/null
+            mount -o remount,rw "$DEVICE" "$1" >>/var/log/livekit-log 2>&1
             mkdir -p "$1/../file"
-            mount -o loop,ro "$1/$FROM" "$1/../file" 2>/dev/null
+            mount -o loop,ro "$1/$FROM" "$1/../file" >>/var/log/livekit-log 2>&1
             FROM="../file/$LIVEKITNAME"
         fi
 
         # search for bundles in the mounted directory
         if [ "$(find "$1/$FROM" -maxdepth 1 -name "*.$BEXT" 2>/dev/null)" != "" ]; then
             # we found at least one bundle/module here
-            mount -o remount,rw "$DEVICE" "$1" 2>/dev/null
+            mount -o remount,rw "$DEVICE" "$1" >>/var/log/livekit-log 2>&1
             echo "$1/$FROM" | tr -s "/" | sed -r "s:/[^/]+/[.][.]/:/:g"
             return
         fi
@@ -642,9 +642,8 @@ find_data()
         refresh_devs
         DATA="$(find_data_try "$2" "$FROM")"
 
-        echo -e "\n" >&2
-
         if [ "$DATA" != "" ]; then
+            echo "" >&2
             echo_livekit_msg "$LIVEKITNAME data found on $(mounted_device "$2")" >&2
             echo "$DATA"
             return

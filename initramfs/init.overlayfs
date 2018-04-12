@@ -45,6 +45,9 @@ init_zram
 # Then, modprobe everything
 modprobe_everything
 
+# 2nd debug shell interval
+debug_shell
+
 # Find data dir with filesystem bundles
 # NEW:
 # Only 15 seconds before timeout, to minimize the
@@ -52,25 +55,25 @@ modprobe_everything
 #
 DATA="$(find_data 15 "$DATAMNT")"
 
-# 2nd debug shell interval
+# 3rd debug shell interval
 debug_shell
 
 # Setup persistent changes
 persistent_changes "$DATA" "$CHANGES"
 
-# 3rd debug shell interval
+# 4th debug shell interval
 debug_shell
 
 # Copy data to RAM if requested by user
 DATA="$(copy_to_ram "$DATA" "$CHANGES")"
 
-# 4th debug shell interval
+# 5th debug shell interval
 debug_shell
 
 # Prepare overlay "union"
 prepare_overlay "$DATA" "$BUNDLES" "$CHANGES" "$UNION"
 
-# 5th debug shell interval
+# 6th debug shell interval
 debug_shell
 
 # Copy contents of 'rootcopy/'
@@ -79,7 +82,7 @@ copy_rootcopy_content "$DATA" "$UNION"
 # Generate a basic 'fstab' with the core filesystems
 fstab_create "$UNION"
 
-# 6th and final debug shell interval
+# 7th and final debug shell interval
 debug_shell
 
 # Declare the end of first 'init' state
