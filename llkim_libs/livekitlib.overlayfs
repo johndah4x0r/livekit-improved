@@ -589,7 +589,7 @@ find_data_try()
         FROM="$2"
         FS="$(device_bestfs "$DEVICE")"
         OPTIONS="$(fs_options "$FS")"
-        mount -r "$DEVICE" "$1" "$FS" "$OPTIONS" >>/var/log/livekit-log 2>&1
+        mount -r "$DEVICE" "$1" ${FS} ${OPTIONS} >>/var/log/livekit-log 2>&1
         debug_log "find_data_try" "DEV:$DEVICE  MNT:$1  FS:$FS  OPTIONS:$OPTIONS"
 
         # if the FROM parameter is actual file, mount it again as loop (eg. iso)
