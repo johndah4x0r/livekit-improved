@@ -23,7 +23,7 @@ get_exclude()
             continue
         fi
 
-        echo "$EXCLUDE_LIST" | tr " " "\n" | grep "$i" | \
+        echo "$EXCLUDE_LIST" | tr -s "/" | tr " " "\n" | grep "/$i" | tr -s "/" | \
         while read -r KEY; do
             echo -n "-e $KEY "
         done
@@ -250,23 +250,25 @@ allow_only_root()
 mkbund()
 {
     debug_log "mkbund" "$*"
-    local SRC DEST
-    SRC="$1"
-    DEST="$2"
+    local ARGS SRC DEST
 
-    shift; shift;
+    # BASH black magic!! (Hehehe!)
+    SRC="$(echo "$@" | tr ' ' "\n" | grep '/' | head -n -1)"
+    DEST="$(echo "$@" | tr ' ' "\n" | grep '/' | tail -n 1 )"
 
-    if [ -e "$DEST" ]; then
-        echo_warn "mkbund: $(basename "$DEST"): About to overwrite.."
-        rm -f "$DEST"
-    else
-        echo_livekit_msg "mkbund: $(basename "$DEST"): Making new bundle..."
-    fi
+    for i in $@; do
+        # If $i is in either $SRC or $DEST, skip $i
+        if [[ $SRC = *"$i"* ]] || [[ $DEST = *"$i"* ]]; then
+            continue
+        fi
 
-    # $@: The rest of the arguments
+        # If $i is not in $SRC or $DEST, append $i to $ARGS
+        ARGS="$ARGS $i"
+    done
+
     echo_livekit_msg "mkbund: SquashFS compression: 1024k - XZ" >&2
     echo_livekit_msg "mkbund: $(basename "$DEST"): Compressing bundle..." >&2
-    mksquashfs "$SRC" "$DEST" -comp xz -b 1024k "$@" >/dev/null 2>&1 || \
+    mksquashfs $SRC "$DEST" -comp xz -b 1024k -no-progress $ARGS >>/var/log/livekit-log 2>&1 || \
     (echo_err "mkbund: Failed to make bundle!" && exit 1)
 }
 

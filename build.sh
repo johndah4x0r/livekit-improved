@@ -161,13 +161,27 @@ if [ -d ./include_bund/ ]; then
     done
 fi
 
-# create compressed bundles
+# Prepare for compression
+echo
+MODULES=""
 for i in $MKMOD; do
-    echo
-    CMDOPT="$(get_exclude "$EXCLUDE" "$i")"
-    mkbund "/$i" "${LIVEKITDATA}/${LIVEKITNAME}/00-main-${i}.${BEXT}" \
-        $CMDOPT -keep-as-directory
+    # Make $i 'mksquashfs'-friendly
+    if [ -d /"$i" ]; then
+        MODULES="$MODULES /$i"
+    fi
 done
+
+# Generate exclude arguments
+CMDOPT="$(get_exclude "$EXCLUDE" "$MKMOD")"
+
+# Create compressed module [01-system.$BEXT]
+mkbund $MODULES "${LIVEKITDATA}/${LIVEKITNAME}/01-system.${BEXT}" -keep-as-directory
+if [ $? -ne 0 ]; then
+    echo_err "build: Error unexpected!"
+    rm -Rf "${LIVEKITDATA}"
+    sync
+    exit 1
+fi
 
 # copy rootcopy folder
 if [ -d rootcopy/ ]; then
@@ -177,7 +191,7 @@ fi
 
 TARGET=/mnt/z
 if [ ! -d "$TARGET" ]; then
-    TARGET=/tmp/livekit-build/
+    TARGET="${PWD}/livekit-build/"
 fi
 
 if [ ! -d "$TARGET" ]; then
@@ -249,7 +263,11 @@ MD5 Checksums for this build:
 
 Have a nice day!
 EOF
-
+for TOOL in $TOOLS_NEEDED; do
+    if ! command -v "$TOOL" >/dev/null 2>&1; then
+        TOOLS_MISSING="$TOOL $TOOLS_MISSING"
+    fi
+done
 echo_livekit_msg "build: $OUT_FILE.iso: $MD5_ISO"
 echo_livekit_msg "build: $OUT_FILE.zip: $MD5_ZIP"
 

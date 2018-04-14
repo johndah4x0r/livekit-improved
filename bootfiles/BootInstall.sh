@@ -3,7 +3,7 @@
 # Requires: fdisk, df, tail, tr, cut, dd, sed, awk
 
 # Check if needed tools exists
-TOOLS_NEEDED=(fdisk df tail tr cut dd sed awk)
+TOOLS_NEEDED="fdisk df tail tr cut dd sed awk"
 for TOOL in $TOOLS_NEEDED; do
     if ! command -v "$TOOL" >/dev/null 2>&1; then
         TOOLS_MISSING="$TOOL $TOOLS_MISSING"
